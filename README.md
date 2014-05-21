@@ -1,4 +1,6 @@
-WSN
+Wireless Sensor Network project (WSN)
 ===
 
-WSN
+This project handles all web communications between clients and Arduino Yun server.
+
+
