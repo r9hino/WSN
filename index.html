@@ -1,0 +1,83 @@
+<!DOCTYPE html> 
+<html>
+<head>
+	<meta charset="UTF-8">
+	<!--Fit page width to mobile devices-->
+	<!--<meta name="viewport" content="initial-scale=1, maximum-scale=1">-->
+	<meta name="viewport" content="width=device-width, initial-scale=0.7, minimum-scale=0.7, maximum-scale=1">
+	
+	<title>Yun Page</title>
+	<link rel="stylesheet" href="jquery-mobile/jquery.mobile-1.4.2.css" type="text/css"/>
+	<link rel="stylesheet" href="styleEMC_v2.css" type="text/css" >
+	
+	<script src="jquery-mobile/jquery-1.11.1.min.js" type="text/javascript"></script>
+	<script src="jquery-mobile/jquery.mobile-1.4.2.min.js" type="text/javascript"></script>
+	<script src="yunscriptEMC_v2.js" type="text/javascript"></script>
+</head> 
+
+<body style="margin:auto;"> 
+
+<div class="all_load" id="loadingall">
+	...Loading/Saving
+</div>
+
+<div data-role="page" id="page">
+	<div data-role="header">
+		<h1>Arduino Yun 1</h1>
+	</div>
+    
+    <div data-role="main" class="ui-content">
+		<h4>System Summary Table</h4>
+		<!--columntoggle is used to allow table to be displayed in mobiles. Button is disable in css-->
+		<table data-role="table" class="ui-responsive" data-mode="columntoggle" id="systemTable">
+			<thead>
+				<tr>
+					<th>ID</th><th>Description</th><th>Values</th>
+				</tr>
+			</thead>
+			<tbody id="tableBody">
+				<tr><td>Status</td> <td>Memory</td> <td>5 MB</td> </tr>
+			</tbody>
+		</table>
+	</div>
+    
+	<div data-role="main" class="ui-content">
+		<ul data-role="listview" data-inset="true">
+			<li><a href="#page2" id="callinitp2">Pins Settings</a></li>
+            <li><a href="#page3" id="callinitp3">Set Digital Pins</a></li>
+		</ul>		
+	</div>
+    
+	<div data-role="footer" data-position="fixed">
+		<h4>EMC</h4>
+	</div>
+</div>
+
+<div data-role="page" id="page2">
+	<div data-role="header"  data-position="fixed">
+    	<a href="#page" data-icon="arrow-l" data-rel="back">Cancel</a>
+		<h1>Digital pin settings</h1>
+        <a href="#page" id="save_io" data-icon="check">Save</a>
+	</div>
+	
+	<div data-role="content">	
+		<div id="setdigital_io">
+        </div>	
+	</div> 
+</div>
+
+<div data-role="page" id="page3">
+	<div data-role="header" data-position="fixed">
+	    <a href="#page" data-icon="arrow-l" data-rel="back">Back</a>
+		<h1>Set digital pin outputs</h1>
+        <a href="#" id="update_io" data-icon="check">Update</a>
+	</div>
+	
+	<div data-role="content">	
+		<div id="setdigital_vals">
+        </div>		
+	</div>
+</div>
+
+</body>
+</html>
