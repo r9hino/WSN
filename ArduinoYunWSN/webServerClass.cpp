@@ -132,8 +132,6 @@ void webServerClass::serverHandle(YunClient client)
 		}
 		client.print("]}");
 	}    
-	// Close connection and free resources.
-	client.stop();
 //delay(5);
 }
 

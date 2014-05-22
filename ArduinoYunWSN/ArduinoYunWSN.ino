@@ -116,6 +116,8 @@ void loop()
 	{
 		//Console.println(">SH()\t");
 		webServerHandler.serverHandle(client); 
+		// Close connection and free resources.
+		client.stop();
 		//Console.println("<SH()\t");
 	}
 	delay(50);
