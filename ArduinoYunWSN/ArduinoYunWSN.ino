@@ -80,7 +80,7 @@ ISR(TIMER1_COMPA_vect)
 		sendCount = 0;
 	}
 
-	// Set retrieveFlag each second
+	// Set retrieveFlag each 2 seconds
 	retrieveCount++;
 	// Enter each 15 sec to send data to thingspeak server
 	if(retrieveCount >= 2)
@@ -127,7 +127,7 @@ void setup()
 // Main loop
 void loop()
 {  
-	// Retrieve sensor data each second. A total of 8 data will be get
+	// Retrieve sensor data each 2 second. A total of 5 data will be get
 	// before sendFlag (15sec) is set. 
 	if(retrieveFlag == 1)
 	{

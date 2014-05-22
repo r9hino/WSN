@@ -36,6 +36,12 @@ void webServerClass::serverHandle(YunClient client)
 	// Returns a JSON "OK" object when finished.
 	if (command == "tableData")
 	{
+		// Set JSON header
+		client.println("Status: 200");
+		client.println("Content-type: application/json");
+		client.println();
+
+		digitalWrite(10, HIGH);
 		String tableJSON = "{\"status\":\
 			[\
 				{\
@@ -55,14 +61,6 @@ void webServerClass::serverHandle(YunClient client)
 				}\
 			]}";
 		client.print(tableJSON);
-
-		// Set JSON header
-		client.println("Status: 200");
-		client.println("Content-type: application/json");
-		client.println();
-		// return ok status
-		client.print("{\"ret\":\"ok\"}");
-
 	}
 
 	// command = io

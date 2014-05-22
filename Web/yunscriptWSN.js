@@ -2,13 +2,6 @@ $(document).ready(function(e) {
 	// Turn off Ajax caching
     $.ajaxSetup({ cache: false });
     
-	// Load table data
-	$.getJSON("/arduino/tableData/",function(data){
-		
-		
-		
-	});
-	
 	// Hide the loading/saving floating DIV
     $('#loadingall').hide();
 
@@ -17,6 +10,18 @@ $(document).ready(function(e) {
     
     var isAutoRefreshP5 = false;
     var timerP5;
+
+	// Load table data
+	$.getJSON("/arduino/tableData/", function(data){
+		$.each(data.status, function(c,d){
+			var row='<tr>';
+				row+='<td>'+(c+1)+'</td>'+
+					'<td>'+d.descriptor+'</td>'+
+					'<td>'+d.value+' '+d.unit+'</td>';
+				row+='</tr>';
+			$('#tableBody').append(row);
+		});    
+	});
     
     // page 2 always has the digital pin data directions - load once only   
     // Note, for YUN, keep digital D0 and digital D1 reserved for arduino <-> linux exchange
