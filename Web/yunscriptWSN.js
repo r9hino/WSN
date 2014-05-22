@@ -12,20 +12,20 @@ $(document).ready(function(e) {
     var timerP5;
 
 	// Load table data
-	$.getJSON("/arduino/tableData/", function(data){
-		$.each(data.status, function(c,d){
-			var row='<tr>';
-				row+='<td>'+(c+1)+'</td>'+
-					'<td>'+d.descriptor+'</td>'+
-					'<td>'+d.value+' '+d.unit+'</td>';
-				row+='</tr>';
-			$('#tableBody').append(row);
-		});    
-	});
+	//$.getJSON("/arduino/tableData/", function(data){
+	//	$.each(data.status, function(c,d){
+	//		var row = '<tr>';
+	//			row += '<td>' + (c+1) + '</td>' +
+	//				   '<td>' + d.descriptor + '</td>' +
+	//				   '<td>' + d.value + ' ' + d.unit + '</td>';
+	//			row += '</tr>';
+	//		$('#tableBody').append(row);
+	//	});    
+	//});
     
     // page 2 always has the digital pin data directions - load once only   
     // Note, for YUN, keep digital D0 and digital D1 reserved for arduino <-> linux exchange
-    // so that pins shown are D2 ... D13
+    // so that pins shown are D2 ... D12
     populate_page2();
     initpage2();        // now initialise their states
 
@@ -39,10 +39,21 @@ $(document).ready(function(e) {
     {
         $('#setdigital_io').empty();    // empty the div
 
-        for (var i=2;i<=13;i++)
+        for (var i=2; i<=12; i++)
         {
             var labStr = "D"+i.toString();
-            $('#setdigital_io').append('<div id="radiogroup'+i+'" data-role="fieldcontain"><fieldset data-role="controlgroup" data-type="horizontal" data-mini="false"><legend>'+labStr+'</legend><input type="radio" name="radio-choice-d'+i+'" id="radio-choice-d'+i+'1" value="choice-'+i+'1" checked="checked"/><label for="radio-choice-d'+i+'1">Output</label><input type="radio" name="radio-choice-d'+i+'" id="radio-choice-d'+i+'2" value="choice-'+i+'2"/><label for="radio-choice-d'+i+'2">Input</label><input type="radio" name="radio-choice-d'+i+'" id="radio-choice-d'+i+'3" value="choice-'+i+'3"/><label for="radio-choice-d'+i+'3">Input (PU)</label></fieldset></div>'   );
+            $('#setdigital_io').append(
+				'<div id="radiogroup'+i+'" data-role="fieldcontain">\
+					<fieldset data-role="controlgroup" data-type="horizontal" data-mini="false">\
+						<legend>'+labStr+'</legend>\
+						<input type="radio" name="radio-choice-d'+i+'" id="radio-choice-d'+i+'1" value="choice-'+i+'1" checked="checked"/>\
+							<label for="radio-choice-d'+i+'1">Output</label>\
+						<input type="radio" name="radio-choice-d'+i+'" id="radio-choice-d'+i+'2" value="choice-'+i+'2"/>\
+							<label for="radio-choice-d'+i+'2">Input</label>\
+						<input type="radio" name="radio-choice-d'+i+'" id="radio-choice-d'+i+'3" value="choice-'+i+'3"/>\
+							<label for="radio-choice-d'+i+'3">Input (PU)</label>\
+					</fieldset>\
+				</div>');
         }
         $('#setdigital_io').trigger('create');  // trigger a create on parent div to make sure the label and buttons are rendered correctly
         blankpage2();   // reset all choices
@@ -59,13 +70,16 @@ $(document).ready(function(e) {
         $('#loadingall').show();
         //$.getJSON("V_io_test.json",function(data){    // swap this for line below to test locally
         $.getJSON("/arduino/in/",function(data){        // send the in command to the Yun
-        var j=2;
+        var j = 2;
         $.each(data.Datadir,        // loop through response and update as required
             function (key,value)
             {
-                if (value.datadir==0) {$('#radio-choice-d'+j+'1').prop("checked",true).checkboxradio( "refresh" );}else{$('#radio-choice-d'+j+'1').prop("checked",false).checkboxradio( "refresh" );}
-                if (value.datadir==1) {$('#radio-choice-d'+j+'2').prop("checked",true).checkboxradio( "refresh" );}else{$('#radio-choice-d'+j+'2').prop("checked",false).checkboxradio( "refresh" );}
-                if (value.datadir==2) {$('#radio-choice-d'+j+'3').prop("checked",true).checkboxradio( "refresh" );}else{$('#radio-choice-d'+j+'3').prop("checked",false).checkboxradio( "refresh" );}
+                if (value.datadir==0) {$('#radio-choice-d'+j+'1').prop("checked",true).checkboxradio( "refresh" );}
+				else{$('#radio-choice-d'+j+'1').prop("checked",false).checkboxradio( "refresh" );}
+                if (value.datadir==1) {$('#radio-choice-d'+j+'2').prop("checked",true).checkboxradio( "refresh" );}
+				else{$('#radio-choice-d'+j+'2').prop("checked",false).checkboxradio( "refresh" );}
+                if (value.datadir==2) {$('#radio-choice-d'+j+'3').prop("checked",true).checkboxradio( "refresh" );}
+				else{$('#radio-choice-d'+j+'3').prop("checked",false).checkboxradio( "refresh" );}
                 j++;
             });
             $('#loadingall').hide();
@@ -75,7 +89,7 @@ $(document).ready(function(e) {
     // this function unchecks all the radio selections for page 2
     function blankpage2()
     {
-        for (var j=2;j<=13;j++)
+        for (var j=2; j<=12; j++)
         {
             $('#radio-choice-d'+j+'1').prop("checked",false).checkboxradio( "refresh" );
             $('#radio-choice-d'+j+'2').prop("checked",false).checkboxradio( "refresh" );
@@ -104,7 +118,7 @@ $(document).ready(function(e) {
     // construct the save-state string to send
     function doSaveStateDir(){  
         var RVal="/io/";
-        for (var j=2;j<=13;j++)
+        for (var j=2; j<=12; j++)
         {
             RVal+=getRadioStateDDir('#radio-choice-d'+j);
         }
@@ -141,7 +155,7 @@ $(document).ready(function(e) {
         //$.getJSON("V_io_test.json",function(data){    // swap this for line below to test locally
         $.getJSON("/arduino/in/",function(data){
         $('#setdigital_vals').empty();  // empty the div
-        var j=2;
+        var j = 2;
         $.each(data.Digital,
             function (key,value)    // 0/1 digital pin is output with value 0/1     10/11 digital pin is input with value 0/1
             {
@@ -202,7 +216,7 @@ $(document).ready(function(e) {
 	{
         var RVal = "/do/";
     
-        for (var j=2; j<=13; j++)
+        for (var j=2; j<=12; j++)
         {
             if ($('#radio-val-d'+j+'1').length > 0)
             {

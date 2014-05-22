@@ -49,8 +49,8 @@ dht DHT;
 YunServer server;
 
 // WebServerClass instance
-byte pinDirs[12] = {1,1,1,1,1,1,1,1,0,0,0,0};
-byte pinVals[12] = {0,0,0,0,0,0,0,0,0,0,0,0};	// pinVals gives the input/output values for pins D2,..., D13
+byte pinDirs[11] = {1,1,1,1,1,1,1,1,0,0,0};
+byte pinVals[11] = {0,0,0,0,0,0,0,0,0,0,0};	// pinVals gives the input/output values for pins D2,..., D12
 int  anVals[6]  = {0,0,0,0,0,0};	// anVals stores the analog input values for pins A0,..., A5
 webServerClass webServerHandler(pinDirs, pinVals, anVals);
 
@@ -67,7 +67,7 @@ ISR(TIMER1_COMPA_vect)
 	// Toggle LED
 	static boolean state = false;
 	state = !state;  // toggle
-	digitalWrite(13, state ? HIGH : LOW); //digitalWrite(pin8, digitalRead(pin8) ^ 1);
+	digitalWrite(13, state ? HIGH : LOW); //digitalWrite(13, digitalRead(13) ^ 1);
 
 	static int sendCount = 0;	    // Count how many second has pass
 	static int retrieveCount = 0;	// Count how many second has pass
