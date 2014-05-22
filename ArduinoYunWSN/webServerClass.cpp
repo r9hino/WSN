@@ -36,6 +36,26 @@ void webServerClass::serverHandle(YunClient client)
 	// Returns a JSON "OK" object when finished.
 	if (command == "tableData")
 	{
+		String tableJSON = "{\"status\":\
+			[\
+				{\
+					\"descriptor\" : \"Linux Memory Used\",\
+					\"value\" : 5000,\
+					\"unit\" : \"MB\"\
+				},\
+				{\
+					\"descriptor\" : \"Linux RAM Used\",\
+					\"value\" : 300,\
+					\"unit\" : \"kB\"\
+				},\
+				{\
+					\"descriptor\" : \"Module IP\",\
+		            \"value\" : \"200.201.126.20\",\
+				    \"unit\" : \"\"\
+				}\
+			]}";
+		client.print(tableJSON);
+
 		// Set JSON header
 		client.println("Status: 200");
 		client.println("Content-type: application/json");
