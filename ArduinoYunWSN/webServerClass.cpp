@@ -31,6 +31,20 @@ void webServerClass::serverHandle(YunClient client)
 	command = client.readStringUntil('/');
 	command.trim();        //kill whitespace
 
+	// command = table Data
+	// This retrieve system information data send it back to client in JSON format.
+	// Returns a JSON "OK" object when finished.
+	if (command == "tableData")
+	{
+		// Set JSON header
+		client.println("Status: 200");
+		client.println("Content-type: application/json");
+		client.println();
+		// return ok status
+		client.print("{\"ret\":\"ok\"}");
+
+	}
+
 	// command = io
 	// This sets the direction of data for the digital pins. 
 	// See definition of pinDirs[] above returns a JSON "OK" object when finished
@@ -131,8 +145,7 @@ void webServerClass::serverHandle(YunClient client)
 			if (i<5) client.print(",");
 		}
 		client.print("]}");
-	}    
-//delay(5);
+	}
 }
 
 

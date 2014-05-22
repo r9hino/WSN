@@ -3,7 +3,7 @@ $(document).ready(function(e) {
     $.ajaxSetup({ cache: false });
     
 	// Load table data
-	$.getJSON("/arduino/tdata/",function(data){
+	$.getJSON("/arduino/tableData/",function(data){
 		
 		
 		
