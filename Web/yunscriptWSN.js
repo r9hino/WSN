@@ -21,6 +21,17 @@ $(document).ready(function(e){
 //                      PAGE 2 FUNCTIONS
 // *****************************************************************************    
 
+	// this function unchecks all the radio selections for page 2
+    function blankpage2()
+    {
+        for (var j=2; j<=12; j++)
+        {
+            $('#radio-choice-d'+j+'1').prop("checked",false).checkboxradio( "refresh" );
+            $('#radio-choice-d'+j+'2').prop("checked",false).checkboxradio( "refresh" );
+            $('#radio-choice-d'+j+'3').prop("checked",false).checkboxradio( "refresh" );
+        }
+    }
+
     // set up the radio groups to allow pin data direction selection
     // between output, input and input with internal pull-up enabled
     function populate_page2()
@@ -77,17 +88,6 @@ $(document).ready(function(e){
 	// when page 2 selected from the main menu call the function to read the
     // current data directions and update the radio selections 
     $('#callinitp2').click(function() {initpage2();});
-
-    // this function unchecks all the radio selections for page 2
-    function blankpage2()
-    {
-        for (var j=2; j<=12; j++)
-        {
-            $('#radio-choice-d'+j+'1').prop("checked",false).checkboxradio( "refresh" );
-            $('#radio-choice-d'+j+'2').prop("checked",false).checkboxradio( "refresh" );
-            $('#radio-choice-d'+j+'3').prop("checked",false).checkboxradio( "refresh" );
-        }
-    }
 
     // Send new data direction to Yun
     // string sent to arduino is of the form: /arduino/io/012012012012/
