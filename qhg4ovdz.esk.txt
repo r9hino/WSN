@@ -1,0 +1,9 @@
+﻿This is a working version which include:
+- Stable Arduino Yun code.
+- Stable web page and javascript to handle request via browser.
+
+Future release will include table information and xbee communication handler.
+
+# Write a tag message
+# Lines starting with '#' will be ignored.
+
