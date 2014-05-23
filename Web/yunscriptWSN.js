@@ -7,6 +7,7 @@ $(document).ready(function(e){
 
 	// Load table data
 	//$.getJSON("/arduino/tableData/", function(data){
+	//	console.log( data );
 	//	$.each(data.status, function(c,d){
 	//		var row = '<tr>';
 	//			row += '<td>' + (c+1) + '</td>' +
@@ -68,20 +69,21 @@ $(document).ready(function(e){
         $('#loadingall').html('...Loading');
         $('#loadingall').show();
         //$.getJSON("V_io_test.json",function(data){    // swap this for line below to test locally
-        $.getJSON("/arduino/in/",function(data){        // send the in command to the Yun
-        var j = 2;
-        $.each(data.Datadir,        // loop through response and update as required
-            function (key,value)
-            {
-                if (value.datadir === 0) {$('#radio-choice-d'+j+'1').prop("checked",true).checkboxradio( "refresh" );}
+        $.getJSON("/arduino/in/",function(data)	  // send the in command to the Yun
+		{
+			console.log( data );
+			var j = 2;
+			$.each(data.Datadir, function (key,value) // loop through response and update as required
+			{
+				if (value.datadir === 0) {$('#radio-choice-d'+j+'1').prop("checked",true).checkboxradio( "refresh" );}
 				else{$('#radio-choice-d'+j+'1').prop("checked",false).checkboxradio( "refresh" );}
-                if (value.datadir === 1) {$('#radio-choice-d'+j+'2').prop("checked",true).checkboxradio( "refresh" );}
+				if (value.datadir === 1) {$('#radio-choice-d'+j+'2').prop("checked",true).checkboxradio( "refresh" );}
 				else{$('#radio-choice-d'+j+'2').prop("checked",false).checkboxradio( "refresh" );}
-                if (value.datadir === 2) {$('#radio-choice-d'+j+'3').prop("checked",true).checkboxradio( "refresh" );}
+				if (value.datadir === 2) {$('#radio-choice-d'+j+'3').prop("checked",true).checkboxradio( "refresh" );}
 				else{$('#radio-choice-d'+j+'3').prop("checked",false).checkboxradio( "refresh" );}
-                j++;
-            });
-            $('#loadingall').hide();
+				j++;
+			});
+			$('#loadingall').hide();
         }); 
     }
 
@@ -102,6 +104,7 @@ $(document).ready(function(e){
     
         //$.getJSON("stat.json",function(data){ // swap this for line below to test locally
         $.getJSON(urlStr,function(data){
+			console.log( data );
             //alert(data.ret);
             $('#loadingall').hide();
         });
@@ -145,42 +148,44 @@ $(document).ready(function(e){
         $('#loadingall').show();	// Display ...Loading on webpage
 
         //$.getJSON("V_io_test.json",function(data){    // swap this for line below to test locally
-        $.getJSON("/arduino/in/",function(data){
-        $('#setdigital_vals').empty();  // empty the div
-        var j = 2;
-        $.each(data.Digital,
-            function (key,value)    // 0/1 digital pin is output with value 0/1     10/11 digital pin is input with value 0/1
-            {
-                var labStr = "D"+j.toString();
+        $.getJSON("/arduino/in/",function(data)
+		{
+			console.log( data );
+			$('#setdigital_vals').empty();  // empty the div
+			var j = 2;
+			$.each(data.Digital,
+				function (key,value)    // 0/1 digital pin is output with value 0/1     10/11 digital pin is input with value 0/1
+				{
+					var labStr = "D"+j.toString();
 
-				// Only to ouputs we assign radio (button). Input which are 10 or 11 do not enter here...
-                if (value.dataval === 0 || value.dataval === 1) 
-                {
-                    $('#setdigital_vals').append(
-						'<div id="radiogroup'+j+'" data-role="fieldcontain">\
-							<fieldset data-role="controlgroup" data-type="horizontal" data-mini="true">\
-								<legend>'+labStr+'</legend>\
-								<input type="radio" name="radio-val-d'+j+'" id="radio-val-d'+j+'1" value="val-'+j+'1" checked="checked"/>\
-									<label for="radio-val-d'+j+'1">On</label>\
-								<input type="radio" name="radio-val-d'+j+'" id="radio-val-d'+j+'2" value="val-'+j+'2"/>\
-									<label for="radio-val-d'+j+'2">Off</label>\
-							</fieldset>\
-						</div>');
+					// Only to ouputs we assign radio (button). Input which are 10 or 11 do not enter here...
+					if (value.dataval === 0 || value.dataval === 1) 
+					{
+						$('#setdigital_vals').append(
+							'<div id="radiogroup'+j+'" data-role="fieldcontain">\
+								<fieldset data-role="controlgroup" data-type="horizontal" data-mini="true">\
+									<legend>'+labStr+'</legend>\
+									<input type="radio" name="radio-val-d'+j+'" id="radio-val-d'+j+'1" value="val-'+j+'1" checked="checked"/>\
+										<label for="radio-val-d'+j+'1">On</label>\
+									<input type="radio" name="radio-val-d'+j+'" id="radio-val-d'+j+'2" value="val-'+j+'2"/>\
+										<label for="radio-val-d'+j+'2">Off</label>\
+								</fieldset>\
+							</div>');
 
-                    $('#setdigital_vals').trigger('create');
+						$('#setdigital_vals').trigger('create');
 
-                    if (value.dataval === 1){$('#radio-val-d'+j+'1').prop("checked",true).checkboxradio( "refresh" );}
-					else{$('#radio-val-d'+j+'1').prop("checked",false).checkboxradio( "refresh" );}
+						if (value.dataval === 1){$('#radio-val-d'+j+'1').prop("checked",true).checkboxradio( "refresh" );}
+						else{$('#radio-val-d'+j+'1').prop("checked",false).checkboxradio( "refresh" );}
 
-					if (value.dataval === 0){$('#radio-val-d'+j+'2').prop("checked",true).checkboxradio( "refresh" );}
-					else{$('#radio-val-d'+j+'2').prop("checked",false).checkboxradio( "refresh" );}        
-                }
-                j++;
-            });
-            $('#loadingall').hide();
+						if (value.dataval === 0){$('#radio-val-d'+j+'2').prop("checked",true).checkboxradio( "refresh" );}
+						else{$('#radio-val-d'+j+'2').prop("checked",false).checkboxradio( "refresh" );}        
+					}
+					j++;
+				});
+				$('#loadingall').hide();
         }); // getJSON
         $('#setdigital_vals').trigger('create');    // trigger a create on parent div to make sure the label and buttons are rendered correctly
-        // going through radio objects here won't work as the getJASON is async and items won't be defined.
+        // going through radio objects here won't work as the getJSON is async and items won't be defined.
     }
 
     // Send new data values to Yun
@@ -197,6 +202,7 @@ $(document).ready(function(e){
 
         //$.getJSON("stat.json",function(data){ // swap this for line below to test locally
         $.getJSON(urlStr,function(data){
+			console.log( data );
             //alert(data.ret);
             $('#loadingall').hide();
         });
