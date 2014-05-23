@@ -5,12 +5,6 @@ $(document).ready(function(e) {
 	// Hide the loading/saving floating DIV
     $('#loadingall').hide();
 
-    var isAutoRefreshP4 = false;
-    var timerP4;
-    
-    var isAutoRefreshP5 = false;
-    var timerP5;
-
 	// Load table data
 	//$.getJSON("/arduino/tableData/", function(data){
 	//	$.each(data.status, function(c,d){
