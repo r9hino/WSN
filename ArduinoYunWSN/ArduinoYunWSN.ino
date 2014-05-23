@@ -1,5 +1,5 @@
 /*
-* Shows how to post data using curl to ThingSpeak.
+* Post data using curl to ThingSpeak.
 * Serve a Web page in it's own server.
 *
 * Script update_dns.sh (/mnt/sda1/arduino) is able to update the public IP of the arduino yun
@@ -23,21 +23,34 @@ String thingspeak_update_API = "http://api.thingspeak.com/update?";
 String thingspeak_write_API_key = "key=XWYK90NA07HVY9LM ";//Insert Your Write API key here 
 String thingspeakfield[maxFields] = {"&field1=", "&field2=", "&field3="};
 String thingspeak_sensor[maxFields] = {"Potentiometer", "Humidity", "Temperature"};
-bool sendFlag;		// Indicate when is possible to send data to the server
 
-unsigned int sensorData[maxFields];	// Store sensor data: 0->Potentiometer, 1->Humidity, 2->Temperature
+bool sendFlag;			// Indicate when is possible to send data to the server
+bool retrieveFlag = 0;	// Indicate when is possible to retrieve sensor data
+
+// Define sensor data structure
+#define totalData 5
+typedef struct
+{
+	unsigned int potentiometer;
+
+    unsigned int humidity;				// Filtered humidity
+	unsigned int accumHumidity;			// Accumulated humidty
+
+    unsigned int temperature;			// Filtered temperature
+	unsigned int accumTemperature;		// Accumulated temperature
+} sensorData;
+sensorData sData;
 
 // Sensor DHT11 instance
 #define DHT11_PIN   5
 dht DHT;
 
-// Listen on default port 5555, the webserver on the Yun
-// will forward there all the HTTP requests for us.
+// Listen on default port 5555, Yun webserver will forward there all HTTP requests for us.
 YunServer server;
 
 // WebServerClass instance
-byte pinDirs[12] = {1,1,1,1,1,1,0,1,1,0,0,0};
-byte pinVals[12] = {0,0,0,0,0,0,0,0,0,0,0,0};	// pinVals gives the input/output values for pins D2,..., D13
+byte pinDirs[11] = {1,1,1,1,1,1,1,1,0,0,0};
+byte pinVals[11] = {0,0,0,0,0,0,0,0,0,0,0};	// pinVals gives the input/output values for pins D2,..., D12
 int  anVals[6]  = {0,0,0,0,0,0};	// anVals stores the analog input values for pins A0,..., A5
 webServerClass webServerHandler(pinDirs, pinVals, anVals);
 
@@ -54,15 +67,26 @@ ISR(TIMER1_COMPA_vect)
 	// Toggle LED
 	static boolean state = false;
 	state = !state;  // toggle
-	digitalWrite(8, state ? HIGH : LOW); //digitalWrite(pin8, digitalRead(pin8) ^ 1);
+	digitalWrite(13, state ? HIGH : LOW); //digitalWrite(13, digitalRead(13) ^ 1);
 
-	static int sec_count = 0;	// Count how many second has pass
-	sec_count++;
+	static int sendCount = 0;	    // Count how many second has pass
+	static int retrieveCount = 0;	// Count how many second has pass
+
+	sendCount++;
 	// Enter each 15 sec to send data to thingspeak server
-	if(sec_count >= 15)
+	if(sendCount >= 15)
 	{
 		sendFlag = 1;
-		sec_count = 0;
+		sendCount = 0;
+	}
+
+	// Set retrieveFlag each 2 seconds
+	retrieveCount++;
+	// Enter each 15 sec to send data to thingspeak server
+	if(retrieveCount >= 2)
+	{
+		retrieveFlag = 1;
+		retrieveCount = 0;
 	}
 }
 
@@ -70,6 +94,10 @@ void setup()
 {
 	pinMode(13, OUTPUT);
     digitalWrite(13, LOW);
+
+	//Initialize structure values
+	sData.accumHumidity = 0;
+	sData.accumTemperature = 0;
 
     // Initialize Bridge.
     Bridge.begin();
@@ -81,7 +109,7 @@ void setup()
 	// Setting up the web server. Listen for incoming connection.
 	server.noListenOnLocalhost();
     server.begin();
-	// initialise digital input/output directions
+	// Initialise digital input/output directions
     // set output values, read digital and analog inputs
 	webServerHandler.setPinDirs();
     webServerHandler.setPinVals();
@@ -99,6 +127,14 @@ void setup()
 // Main loop
 void loop()
 {  
+	// Retrieve sensor data each 2 second. A total of 5 data will be get
+	// before sendFlag (15sec) is set. 
+	if(retrieveFlag == 1)
+	{
+		retrieveFlag = 0;
+		retreiveSensorData();
+	}
+
   	// Send data to ThingSpeak each 15 seconds
 	if(sendFlag == 1)
 	{
@@ -108,7 +144,6 @@ void loop()
 		//Console.println("<TS()");
 	}
   
-	// Run web server handler
 	// Get clients coming from server
 	YunClient client = server.accept();
 	// There is a new client?
@@ -130,12 +165,12 @@ void postToThingspeak(){
 	String bufferIn;
 	String request_string; 
 	
-	retreiveSensorData();
+	//retreiveSensorData();
 
 	request_string = thingspeak_update_API + thingspeak_write_API_key + 
-			         thingspeakfield[0] + String(sensorData[0]) + 
-					 thingspeakfield[1] + String(sensorData[1]) + 
-					 thingspeakfield[2] + String(sensorData[2]);
+			         thingspeakfield[0] + String(sData.potentiometer) + 
+					 thingspeakfield[1] + String(sData.humidity) + 
+					 thingspeakfield[2] + String(sData.temperature);
 	// Make a HTTP request:
 	client.get(request_string);
   
@@ -151,13 +186,13 @@ void postToThingspeak(){
 		Console.print(bufferIn);
 		Console.println("\tUpdate Completed:");
 		Console.print("\t" + thingspeak_sensor[0] + " Value: ");
-		Console.println(sensorData[0]);
+		Console.println(sData.potentiometer);
 
 		Console.print("\t" + thingspeak_sensor[1] + " Value: ");
-		Console.println(sensorData[1]);
+		Console.println(sData.humidity);
 			
 		Console.print("\t" + thingspeak_sensor[2] + " Value: ");
-		Console.println(sensorData[2]);
+		Console.println(sData.temperature);
 	}
 	else
 	{
@@ -168,14 +203,24 @@ void postToThingspeak(){
 
 void retreiveSensorData()
 {
-	sensorData[0] = analogRead(A1);
+	static int countData = 0;	// Count collected data
+	sData.potentiometer = analogRead(A1);
 
 	// Read Data
 	if(DHT.read11(DHT11_PIN) == DHTLIB_OK)
 	{
 		//Console.println("DHT11 OK.\t"); 
-		sensorData[1] = DHT.humidity;
-		sensorData[2] = DHT.temperature;
+		countData++;
+		sData.accumHumidity += DHT.humidity;
+		sData.accumTemperature += DHT.temperature;
+		if(countData == totalData)	// Total collected data equal to 8
+		{
+			sData.humidity = sData.accumHumidity/totalData;
+			sData.temperature = sData.accumTemperature/totalData;
+			sData.accumHumidity = 0;
+			sData.accumTemperature = 0;
+			countData = 0;
+		}
 	}
 	else
 	{
