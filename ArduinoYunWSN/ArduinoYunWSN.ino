@@ -213,7 +213,7 @@ void retreiveSensorData()
 		countData++;
 		sData.accumHumidity += DHT.humidity;
 		sData.accumTemperature += DHT.temperature;
-		if(countData == totalData)	// Total collected data equal to 8
+		if(countData == totalData)	// Total collected data equal to 5
 		{
 			sData.humidity = sData.accumHumidity/totalData;
 			sData.temperature = sData.accumTemperature/totalData;
