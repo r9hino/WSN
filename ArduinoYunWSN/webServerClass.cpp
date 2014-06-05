@@ -34,7 +34,7 @@ void webServerClass::serverHandle(YunClient client)
 	// command = table Data
 	// This retrieve system information data send it back to client in JSON format.
 	// Returns a JSON "OK" object when finished.
-	if (command == "tableData")
+	/*if (command == "tableData")
 	{
 		// Set JSON header
 		client.println("Status: 200");
@@ -61,7 +61,7 @@ void webServerClass::serverHandle(YunClient client)
 				}\
 			]}";
 		client.print(tableJSON);
-	}
+	}*/
 
 	// command = io
 	// This sets the direction of data for the digital pins. 

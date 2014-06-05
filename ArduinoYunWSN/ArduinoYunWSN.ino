@@ -18,11 +18,12 @@
 
 
 //Thingspeak parameters 
-#define maxFields 3		// Define maximum fields used in thingspeak
-String thingspeak_update_API = "http://api.thingspeak.com/update?";
-String thingspeak_write_API_key = "key=XWYK90NA07HVY9LM ";//Insert Your Write API key here 
-String thingspeakfield[maxFields] = {"&field1=", "&field2=", "&field3="};
-String thingspeak_sensor[maxFields] = {"Potentiometer", "Humidity", "Temperature"};
+#define maxFields 2		// Define maximum fields used in thingspeak
+String thingspeakUpdateAPI = "http://api.thingspeak.com/update?";
+String thingspeakWriteAPIKey = "key=1EQD8TANGANJHA3J";//Insert Your Write API key here 
+//String thingspeakfield[maxFields] = {"&field1=", "&field2=", "&field3="};
+String thingspeakField[maxFields] = {"field1", "field2"};
+//String thingspeakField[maxFields] = {"hdty1", "temp1"};
 
 bool sendFlag;			// Indicate when is possible to send data to the server
 bool retrieveFlag = 0;	// Indicate when is possible to retrieve sensor data
@@ -31,8 +32,6 @@ bool retrieveFlag = 0;	// Indicate when is possible to retrieve sensor data
 #define totalData 5
 typedef struct
 {
-	unsigned int potentiometer;
-
     unsigned int humidity;				// Filtered humidity
 	unsigned int accumHumidity;			// Accumulated humidty
 
@@ -164,13 +163,10 @@ void postToThingspeak(){
 	char charIn; 
 	String bufferIn;
 	String request_string; 
-	
-	//retreiveSensorData();
 
-	request_string = thingspeak_update_API + thingspeak_write_API_key + 
-			         thingspeakfield[0] + String(sData.potentiometer) + 
-					 thingspeakfield[1] + String(sData.humidity) + 
-					 thingspeakfield[2] + String(sData.temperature);
+	request_string = thingspeakUpdateAPI + thingspeakWriteAPIKey + 
+			         "&" + thingspeakField[0] + "=" + String(sData.humidity) + 
+					 "&" + thingspeakField[1] + "=" + String(sData.temperature);
 	// Make a HTTP request:
 	client.get(request_string);
   
@@ -185,13 +181,10 @@ void postToThingspeak(){
 	{
 		Console.print(bufferIn);
 		Console.println("\tUpdate Completed:");
-		Console.print("\t" + thingspeak_sensor[0] + " Value: ");
-		Console.println(sData.potentiometer);
-
-		Console.print("\t" + thingspeak_sensor[1] + " Value: ");
+		Console.print("\tHdty1 Value: ");
 		Console.println(sData.humidity);
-			
-		Console.print("\t" + thingspeak_sensor[2] + " Value: ");
+
+		Console.print("\tTemp1 Value: ");
 		Console.println(sData.temperature);
 	}
 	else
@@ -204,7 +197,7 @@ void postToThingspeak(){
 void retreiveSensorData()
 {
 	static int countData = 0;	// Count collected data
-	sData.potentiometer = analogRead(A1);
+	//sData.potentiometer = analogRead(A1);
 
 	// Read Data
 	if(DHT.read11(DHT11_PIN) == DHTLIB_OK)
