@@ -60,7 +60,7 @@ int  anVals[6]  = {0,0,0,0,0,0};	// anVals stores the analog input values for pi
 webServerClass webServerHandler(pinDirs, pinVals, anVals);
 
 // Xbee instance and variables.
-AltSoftSerial altSoftSerial;	// Arduino UNO use pin9->Tx and pin8->Rx
+AltSoftSerial altSoftSerial;	// Arduino UNO use pin5->Tx and pin13->Rx
 SetXbee xbee;
 unsigned char cmdD4[2] = {'D','4'};	// Remote AT command request for IS and D4
 const uint32_t addrXbee[] = {0x40B82646, 0x40A71859};	// Save lsb address for xbee modules
@@ -223,14 +223,14 @@ void retreiveSensorData()
 			sData.xbeeTempSensor[0] = calculateXBeeTemp(xbee.getADC3());
 			xbee.sendRemoteATCmdReq(addrXbee[0], 16, OPT_APPLY_CHANGES, cmdD4, 0x05, true);
 			xbee.sendRemoteATCmdReq(addrXbee[0], 16, OPT_APPLY_CHANGES, cmdD4, 0x04, true);
-			//Console.println(sData.xbeeTempSensor[0]);
+			Console.println(sData.xbeeTempSensor[0]);
 		}
 		else if(xbee.getRxLsbAddr64() == addrXbee[1])
 		{
 			sData.xbeeTempSensor[1] = calculateXBeeTemp(xbee.getADC3());
 			xbee.sendRemoteATCmdReq(addrXbee[1], 16, OPT_APPLY_CHANGES, cmdD4, 0x05, true);
 			xbee.sendRemoteATCmdReq(addrXbee[1], 16, OPT_APPLY_CHANGES, cmdD4, 0x04, true);
-			//Console.println(sData.xbeeTempSensor[1]);
+			Console.println(sData.xbeeTempSensor[1]);
 		}
 	}
 
