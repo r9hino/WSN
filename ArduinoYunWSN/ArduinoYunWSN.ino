@@ -11,7 +11,6 @@
 #include <Bridge.h>
 #include <YunServer.h>
 #include <YunClient.h>
-// Include needed for ThingSpeak
 #include <Console.h>
 #include <HttpClient.h>
 #include <dht.h>
@@ -24,9 +23,7 @@
 #define maxFields 4		// Define maximum fields used in thingspeak
 String thingspeakUpdateAPI = "http://api.thingspeak.com/update?";
 String thingspeakWriteAPIKey = "key=1EQD8TANGANJHA3J";//Insert Your Write API key here 
-//String thingspeakfield[maxFields] = {"&field1=", "&field2=", "&field3="};
 String thingspeakField[maxFields] = {"field1", "field2", "field3", "field4"};
-//String thingspeakField[maxFields] = {"hdty1", "temp1"};
 
 // Timing flags
 bool sendFlag = 0;			// Indicate when is possible to send data to the server
@@ -54,13 +51,13 @@ dht DHT;
 YunServer server;
 
 // WebServerClass instance
-byte pinDirs[11] = {1,0,1,0,1,1,1,1,1,0,0};
-byte pinVals[11] = {0,0,0,0,0,0,0,0,0,0,0};	// pinVals gives the input/output values for pins D2,..., D12
+byte pinDirs[7] = {1,1,1,1,1,0,0};
+byte pinVals[7] = {0,0,0,0,0,0,0};	// pinVals gives the input/output values for pins D6,..., D12
 int  anVals[6]  = {0,0,0,0,0,0};	// anVals stores the analog input values for pins A0,..., A5
 webServerClass webServerHandler(pinDirs, pinVals, anVals);
 
 // Xbee instance and variables.
-AltSoftSerial altSoftSerial;	// Arduino UNO use pin5->Tx and pin13->Rx
+AltSoftSerial altSoftSerial;	// Arduino Yun use pin5->Tx and pin13->Rx
 SetXbee xbee;
 unsigned char cmdD4[2] = {'D','4'};	// Remote AT command request for IS and D4
 const uint32_t addrXbee[] = {0x40B82646, 0x40A71859};	// Save lsb address for xbee modules
@@ -69,6 +66,7 @@ const uint32_t addrXbee[] = {0x40B82646, 0x40A71859};	// Save lsb address for xb
 // Function prototype. Function declarations.
 void postToThingspeak();
 void retreiveSensorData();
+float calculateXBeeTemp(unsigned int xbeeAnalog);
 
 
 // Interrupt service routine for Timer1
@@ -79,7 +77,7 @@ ISR(TIMER1_COMPA_vect)
 	// Heart beat LED
 	static boolean state = false;
 	state = !state;  // toggle
-	digitalWrite(3, state ? HIGH : LOW); //digitalWrite(13, digitalRead(13) ^ 1);
+	digitalWrite(3, state ? HIGH : LOW); //digitalWrite(3, digitalRead(3) ^ 1);
 
 	static int sendCount = 0;	    // Count how many second has pass
 	static int retrieveCount = 0;	// Count how many second has pass
@@ -122,6 +120,8 @@ void setup()
 	// Initialise digital input/output directions, set output values, read digital and analog inputs
 	webServerHandler.setPinDirs();
     webServerHandler.setPinVals();
+	//pinMode(5, OUTPUT);
+	//digitalWrite(5, LOW);
 
 	// Start serial communications for xbee
    	altSoftSerial.begin(9600);

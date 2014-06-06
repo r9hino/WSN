@@ -25,7 +25,7 @@ $(document).ready(function(e){
 	// this function unchecks all the radio selections for page 2
     function blankpage2()
     {
-        for (var j=2; j<=12; j++)
+        for (var j=6; j<=12; j++)
         {
             $('#radio-choice-d'+j+'1').prop("checked",false).checkboxradio( "refresh" );
             $('#radio-choice-d'+j+'2').prop("checked",false).checkboxradio( "refresh" );
@@ -39,7 +39,7 @@ $(document).ready(function(e){
     {
         $('#setdigital_io').empty();    // empty the div
 
-        for (var i=2; i<=12; i++)
+        for (var i=6; i<=12; i++)
         {
             var labStr = "D"+i.toString();
             $('#setdigital_io').append(
@@ -60,7 +60,7 @@ $(document).ready(function(e){
     }
 	// page 2 always has the digital pin data directions - load once only   
     // Note, for YUN, keep digital D0 and digital D1 reserved for arduino <-> linux exchange
-    // so that pins shown are D2 ... D12
+    // so that pins shown are D6 ... D12
     populate_page2();
 
     // function to make a call to the Yun and use the JSON data sent back to initialise the radio selections
@@ -72,7 +72,7 @@ $(document).ready(function(e){
         $.getJSON("/arduino/in/",function(data)	  // send the in command to the Yun
 		{
 			console.log( data );
-			var j = 2;
+			var j = 6;
 			$.each(data.Datadir, function (key,value) // loop through response and update as required
 			{
 				if (value.datadir === 0) {$('#radio-choice-d'+j+'1').prop("checked",true).checkboxradio( "refresh" );}
@@ -113,7 +113,7 @@ $(document).ready(function(e){
     // construct the save-state string to send
     function doSaveStateDir(){  
         var RVal="/io/";
-        for (var j=2; j<=12; j++)
+        for (var j=6; j<=12; j++)
         {
             RVal+=getRadioStateDDir('#radio-choice-d'+j);
         }
@@ -152,7 +152,7 @@ $(document).ready(function(e){
 		{
 			console.log( data );
 			$('#setdigital_vals').empty();  // empty the div
-			var j = 2;
+			var j = 6;
 			$.each(data.Digital,
 				function (key,value)    // 0/1 digital pin is output with value 0/1     10/11 digital pin is input with value 0/1
 				{
@@ -213,7 +213,7 @@ $(document).ready(function(e){
 	{
         var RVal = "/do/";
 
-        for (var j=2; j<=12; j++)
+        for (var j=6; j<=12; j++)
         {
             if ($('#radio-val-d'+j+'1').length > 0)
             {
