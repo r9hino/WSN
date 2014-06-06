@@ -51,7 +51,7 @@ dht DHT;
 YunServer server;
 
 // WebServerClass instance
-byte pinDirs[7] = {1,1,1,1,1,0,0};
+byte pinDirs[7] = {1,1,1,0,0,0,0};
 byte pinVals[7] = {0,0,0,0,0,0,0};	// pinVals gives the input/output values for pins D6,..., D12
 int  anVals[6]  = {0,0,0,0,0,0};	// anVals stores the analog input values for pins A0,..., A5
 webServerClass webServerHandler(pinDirs, pinVals, anVals);
@@ -153,10 +153,8 @@ void loop()
   	// Send data to ThingSpeak each 15 seconds
 	if(sendFlag == 1)
 	{
-		//Console.println(">TS()\t");
 		sendFlag = 0;
 		postToThingspeak();
-		//Console.println("<TS()");
 	}
   
 	// Get clients coming from server
@@ -164,11 +162,15 @@ void loop()
 	// There is a new client?
 	if (client)
 	{
-		//Console.println(">SH()\t");
 		webServerHandler.serverHandle(client); 
 		// Close connection and free resources.
 		client.stop();
-		//Console.println("<SH()\t");
+		// Set remote xbee pins if local pins 9 and 10 are set via JS.
+		if(digitalRead(9) == 1)   xbee.sendRemoteATCmdReq(addrXbee[0], 16, OPT_APPLY_CHANGES, cmdD4, 0x05, true);
+		else   xbee.sendRemoteATCmdReq(addrXbee[0], 16, OPT_APPLY_CHANGES, cmdD4, 0x04, true);
+
+		if(digitalRead(10) == 1)   xbee.sendRemoteATCmdReq(addrXbee[1], 16, OPT_APPLY_CHANGES, cmdD4, 0x05, true);
+		else   xbee.sendRemoteATCmdReq(addrXbee[1], 16, OPT_APPLY_CHANGES, cmdD4, 0x04, true);
 	}
 	delay(50);
 }
@@ -221,16 +223,16 @@ void retreiveSensorData()
 		if(xbee.getRxLsbAddr64() == addrXbee[0])
 		{
 			sData.xbeeTempSensor[0] = calculateXBeeTemp(xbee.getADC3());
-			xbee.sendRemoteATCmdReq(addrXbee[0], 16, OPT_APPLY_CHANGES, cmdD4, 0x05, true);
-			xbee.sendRemoteATCmdReq(addrXbee[0], 16, OPT_APPLY_CHANGES, cmdD4, 0x04, true);
-			Console.println(sData.xbeeTempSensor[0]);
+			//xbee.sendRemoteATCmdReq(addrXbee[0], 16, OPT_APPLY_CHANGES, cmdD4, 0x05, true);
+			//xbee.sendRemoteATCmdReq(addrXbee[0], 16, OPT_APPLY_CHANGES, cmdD4, 0x04, true);
+			//Console.println(sData.xbeeTempSensor[0]);
 		}
 		else if(xbee.getRxLsbAddr64() == addrXbee[1])
 		{
 			sData.xbeeTempSensor[1] = calculateXBeeTemp(xbee.getADC3());
-			xbee.sendRemoteATCmdReq(addrXbee[1], 16, OPT_APPLY_CHANGES, cmdD4, 0x05, true);
-			xbee.sendRemoteATCmdReq(addrXbee[1], 16, OPT_APPLY_CHANGES, cmdD4, 0x04, true);
-			Console.println(sData.xbeeTempSensor[1]);
+			//xbee.sendRemoteATCmdReq(addrXbee[1], 16, OPT_APPLY_CHANGES, cmdD4, 0x05, true);
+			//xbee.sendRemoteATCmdReq(addrXbee[1], 16, OPT_APPLY_CHANGES, cmdD4, 0x04, true);
+			//Console.println(sData.xbeeTempSensor[1]);
 		}
 	}
 
