@@ -21,11 +21,11 @@
 
 
 //Thingspeak parameters 
-#define maxFields 2		// Define maximum fields used in thingspeak
+#define maxFields 4		// Define maximum fields used in thingspeak
 String thingspeakUpdateAPI = "http://api.thingspeak.com/update?";
 String thingspeakWriteAPIKey = "key=1EQD8TANGANJHA3J";//Insert Your Write API key here 
 //String thingspeakfield[maxFields] = {"&field1=", "&field2=", "&field3="};
-String thingspeakField[maxFields] = {"field1", "field2"};
+String thingspeakField[maxFields] = {"field1", "field2", "field3", "field4"};
 //String thingspeakField[maxFields] = {"hdty1", "temp1"};
 
 // Timing flags
@@ -36,13 +36,13 @@ bool retrieveFlag = 0;	// Indicate when is possible to retrieve sensor data
 #define totalData 5
 typedef struct
 {
-    unsigned int humidity;				// Filtered humidity
-	unsigned int accumHumidity;			// Accumulated humidty
+    unsigned int yunHdty;					// Filtered humidity
+	unsigned int accumHdty;			// Accumulated humidty
 
-    unsigned int temperature;			// Filtered temperature
-	unsigned int accumTemperature;		// Accumulated temperature
+    unsigned int yunTemp;					// Filtered temperature
+	unsigned int accumTemp;			// Accumulated temperature
 
-	unsigned int xbeeTempSensor[2];
+	float xbeeTempSensor[2];
 } sensorData;
 sensorData sData;
 
@@ -108,8 +108,8 @@ void setup()
     digitalWrite(3, LOW);
 
 	//Initialize structure values
-	sData.accumHumidity = 0;
-	sData.accumTemperature = 0;
+	sData.accumHdty = 0;
+	sData.accumTemp = 0;
 
     // Initialize Bridge.
     Bridge.begin();
@@ -125,7 +125,7 @@ void setup()
 
 	// Start serial communications for xbee
    	altSoftSerial.begin(9600);
-	xbee.setSerialPrint(Console);
+	xbee.setSerialPrint(Console);	// Connection lost if serialPrint is not defined!!!!!!!!!
 	xbee.setSerialXbee(altSoftSerial);
 
 	digitalWrite(3, HIGH);
@@ -181,13 +181,14 @@ void postToThingspeak(){
 	String request_string; 
 
 	request_string = thingspeakUpdateAPI + thingspeakWriteAPIKey + 
-			         "&" + thingspeakField[0] + "=" + String(sData.humidity) + 
-					 "&" + thingspeakField[1] + "=" + String(sData.temperature);
-	// Make a HTTP request:
+			         "&" + thingspeakField[0] + "=" + String(sData.yunHdty) + 
+					 "&" + thingspeakField[1] + "=" + String(sData.yunTemp) +
+					 "&" + thingspeakField[2] + "=" + String(sData.xbeeTempSensor[0]) +
+					 "&" + thingspeakField[3] + "=" + String(sData.xbeeTempSensor[1]);
+	// Make a HTTP request.
 	client.get(request_string);
   
-	// if there are incoming bytes available 
-	// from the server, read them and print them:  
+	// If there are incoming bytes available from the server, read them and print them.
 	while(client.available())
 	{
 		charIn = client.read();
@@ -197,11 +198,10 @@ void postToThingspeak(){
 	{
 		Console.print(bufferIn);
 		Console.println("\tUpdate Completed:");
-		Console.print("\tHdty1 Value: ");
-		Console.println(sData.humidity);
-
-		Console.print("\tTemp1 Value: ");
-		Console.println(sData.temperature);
+		Console.print("\tYun Hdty Value: "); Console.println(sData.yunHdty);
+		Console.print("\tYun Temp Value: "); Console.println(sData.yunTemp);
+		Console.print("\tXbee Temp1 Value: "); Console.println(sData.xbeeTempSensor[0]);
+		Console.print("\tXbee Temp2 Value: "); Console.println(sData.xbeeTempSensor[1]);
 	}
 	else
 	{
@@ -214,15 +214,24 @@ void retreiveSensorData()
 {
 	// Get xbee sensor information
 	xbee.readPacket();
-	if(xbee.getRxLsbAddr64() == addrXbee[0])
+
+	// Only if new data is available and complete will proceed.
+	if(xbee.isRxComplete())
 	{
-		sData.xbeeTempSensor[0] = (unsigned int)calculateXBeeTemp(xbee.getADC3());
-		Console.println(sData.xbeeTempSensor[0]);
-	}
-	else if(xbee.getRxLsbAddr64() == addrXbee[1])
-	{
-		sData.xbeeTempSensor[1] = (unsigned int)calculateXBeeTemp(xbee.getADC3());
-		Console.println(sData.xbeeTempSensor[1]);
+		if(xbee.getRxLsbAddr64() == addrXbee[0])
+		{
+			sData.xbeeTempSensor[0] = calculateXBeeTemp(xbee.getADC3());
+			xbee.sendRemoteATCmdReq(addrXbee[0], 16, OPT_APPLY_CHANGES, cmdD4, 0x05, true);
+			xbee.sendRemoteATCmdReq(addrXbee[0], 16, OPT_APPLY_CHANGES, cmdD4, 0x04, true);
+			//Console.println(sData.xbeeTempSensor[0]);
+		}
+		else if(xbee.getRxLsbAddr64() == addrXbee[1])
+		{
+			sData.xbeeTempSensor[1] = calculateXBeeTemp(xbee.getADC3());
+			xbee.sendRemoteATCmdReq(addrXbee[1], 16, OPT_APPLY_CHANGES, cmdD4, 0x05, true);
+			xbee.sendRemoteATCmdReq(addrXbee[1], 16, OPT_APPLY_CHANGES, cmdD4, 0x04, true);
+			//Console.println(sData.xbeeTempSensor[1]);
+		}
 	}
 
 	static int countData = 0;	// Count collected data
@@ -233,14 +242,14 @@ void retreiveSensorData()
 	{
 		//Console.println("DHT11 OK.\t"); 
 		countData++;
-		sData.accumHumidity += DHT.humidity;
-		sData.accumTemperature += DHT.temperature;
+		sData.accumHdty += DHT.humidity;
+		sData.accumTemp += DHT.temperature;
 		if(countData == totalData)	// Total collected data equal to 8
 		{
-			sData.humidity = sData.accumHumidity/totalData;
-			sData.temperature = sData.accumTemperature/totalData;
-			sData.accumHumidity = 0;
-			sData.accumTemperature = 0;
+			sData.yunHdty = sData.accumHdty/totalData;
+			sData.yunTemp = sData.accumTemp/totalData;
+			sData.accumHdty = 0;
+			sData.accumTemp = 0;
 			countData = 0;
 		}
 	}
