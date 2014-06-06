@@ -6,6 +6,7 @@
 * crontab execute this script every 5 min
 */
 
+#include <AltSoftSerial.h>
 #include <interrupt.h>
 #include <Bridge.h>
 #include <YunServer.h>
@@ -14,6 +15,8 @@
 #include <Console.h>
 #include <HttpClient.h>
 #include <dht.h>
+#include <AltSoftSerial.h>
+#include <SetXbee.h>
 #include "webServerClass.h"
 
 
@@ -25,7 +28,8 @@ String thingspeakWriteAPIKey = "key=1EQD8TANGANJHA3J";//Insert Your Write API ke
 String thingspeakField[maxFields] = {"field1", "field2"};
 //String thingspeakField[maxFields] = {"hdty1", "temp1"};
 
-bool sendFlag;			// Indicate when is possible to send data to the server
+// Timing flags
+bool sendFlag = 0;			// Indicate when is possible to send data to the server
 bool retrieveFlag = 0;	// Indicate when is possible to retrieve sensor data
 
 // Define sensor data structure
@@ -37,21 +41,30 @@ typedef struct
 
     unsigned int temperature;			// Filtered temperature
 	unsigned int accumTemperature;		// Accumulated temperature
+
+	unsigned int xbeeTempSensor[2];
 } sensorData;
 sensorData sData;
 
-// Sensor DHT11 instance
-#define DHT11_PIN   5
+// Sensor DHT11 instance.
+#define DHT11_PIN   2
 dht DHT;
 
 // Listen on default port 5555, Yun webserver will forward there all HTTP requests for us.
 YunServer server;
 
 // WebServerClass instance
-byte pinDirs[11] = {1,1,1,1,1,1,1,1,0,0,0};
+byte pinDirs[11] = {1,0,1,0,1,1,1,1,1,0,0};
 byte pinVals[11] = {0,0,0,0,0,0,0,0,0,0,0};	// pinVals gives the input/output values for pins D2,..., D12
 int  anVals[6]  = {0,0,0,0,0,0};	// anVals stores the analog input values for pins A0,..., A5
 webServerClass webServerHandler(pinDirs, pinVals, anVals);
+
+// Xbee instance and variables.
+AltSoftSerial altSoftSerial;	// Arduino UNO use pin9->Tx and pin8->Rx
+SetXbee xbee;
+unsigned char cmdD4[2] = {'D','4'};	// Remote AT command request for IS and D4
+const uint32_t addrXbee[] = {0x40B82646, 0x40A71859};	// Save lsb address for xbee modules
+
 
 // Function prototype. Function declarations.
 void postToThingspeak();
@@ -63,10 +76,10 @@ ISR(TIMER1_COMPA_vect)
 { //<---- No problem, just intellisense complaining
 	//Do not use Console.print()! Console.println(">ISR()\t");
 	
-	// Toggle LED
+	// Heart beat LED
 	static boolean state = false;
 	state = !state;  // toggle
-	digitalWrite(13, state ? HIGH : LOW); //digitalWrite(13, digitalRead(13) ^ 1);
+	digitalWrite(3, state ? HIGH : LOW); //digitalWrite(13, digitalRead(13) ^ 1);
 
 	static int sendCount = 0;	    // Count how many second has pass
 	static int retrieveCount = 0;	// Count how many second has pass
@@ -91,8 +104,8 @@ ISR(TIMER1_COMPA_vect)
 
 void setup()
 {
-	pinMode(13, OUTPUT);
-    digitalWrite(13, LOW);
+	pinMode(3, OUTPUT);
+    digitalWrite(3, LOW);
 
 	//Initialize structure values
 	sData.accumHumidity = 0;
@@ -102,17 +115,20 @@ void setup()
     Bridge.begin();
     // Initialize linux console-serial.
     Console.begin();
-	// Initialize avr serial
-	//Serial.begin(115200);
 
 	// Setting up the web server. Listen for incoming connection.
 	server.noListenOnLocalhost();
     server.begin();
-	// Initialise digital input/output directions
-    // set output values, read digital and analog inputs
+	// Initialise digital input/output directions, set output values, read digital and analog inputs
 	webServerHandler.setPinDirs();
     webServerHandler.setPinVals();
-	digitalWrite(13, HIGH);
+
+	// Start serial communications for xbee
+   	altSoftSerial.begin(9600);
+	xbee.setSerialPrint(Console);
+	xbee.setSerialXbee(altSoftSerial);
+
+	digitalWrite(3, HIGH);
 
     // Initiallize Timer1
     noInterrupts();         // Disable all interrupts
@@ -126,8 +142,8 @@ void setup()
 // Main loop
 void loop()
 {  
-	// Retrieve sensor data each 2 second. A total of 5 data will be get
-	// before sendFlag (15sec) is set. 
+	// Retrieve sensor data each 2 second. 
+	// A total of 5 data (10 sec) will be store before sendFlag (15sec) is set. 
 	if(retrieveFlag == 1)
 	{
 		retrieveFlag = 0;
@@ -196,6 +212,19 @@ void postToThingspeak(){
 
 void retreiveSensorData()
 {
+	// Get xbee sensor information
+	xbee.readPacket();
+	if(xbee.getRxLsbAddr64() == addrXbee[0])
+	{
+		sData.xbeeTempSensor[0] = (unsigned int)calculateXBeeTemp(xbee.getADC3());
+		Console.println(sData.xbeeTempSensor[0]);
+	}
+	else if(xbee.getRxLsbAddr64() == addrXbee[1])
+	{
+		sData.xbeeTempSensor[1] = (unsigned int)calculateXBeeTemp(xbee.getADC3());
+		Console.println(sData.xbeeTempSensor[1]);
+	}
+
 	static int countData = 0;	// Count collected data
 	//sData.potentiometer = analogRead(A1);
 
@@ -219,4 +248,16 @@ void retreiveSensorData()
 	{
 		Console.println("DHT11 Error,\t"); 
 	}	
+}
+
+// This function takes an XBee analog pin reading and converts it to a voltage value
+float calculateXBeeTemp(unsigned int xbeeAnalog) {
+	float volt = ((float)xbeeAnalog/1023)*1.23; //Convert the analog value to a voltage value
+  
+	float temp = 0;
+	// Calculate temp in C, .75 volts is 25 C. 10mV per degree
+	if (volt <= .75) { temp = 25 - ((.75-volt)/.01); } //if below 25 C
+	else { temp = 25 + ((volt -.75)/.01); } //if above 25
+	
+	return temp;
 }
