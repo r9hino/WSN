@@ -41,11 +41,11 @@ $(document).ready(function(e){
 
         for (var i=6; i<=12; i++)
         {
-            var labStr = "D"+i.toString();
+            var labelStr = "D"+i.toString();
             $('#setdigital_io').append(
 				'<div id="radiogroup'+i+'" data-role="fieldcontain">\
 					<fieldset data-role="controlgroup" data-type="horizontal" data-mini="false">\
-						<legend>'+labStr+'</legend>\
+						<legend>'+labelStr+'</legend>\
 						<input type="radio" name="radio-choice-d'+i+'" id="radio-choice-d'+i+'1" value="choice-'+i+'1" checked="checked"/>\
 							<label for="radio-choice-d'+i+'1">Output</label>\
 						<input type="radio" name="radio-choice-d'+i+'" id="radio-choice-d'+i+'2" value="choice-'+i+'2"/>\
@@ -69,9 +69,9 @@ $(document).ready(function(e){
         $('#loadingall').html('...Loading');
         $('#loadingall').show();
         //$.getJSON("V_io_test.json",function(data){    // swap this for line below to test locally
-        $.getJSON("/arduino/in/",function(data)	  // send the in command to the Yun
+        $.getJSON("/arduino/readIO/",function(data)	  // send the in command to the Yun
 		{
-			console.log( data );
+			console.log(data);
 			var j = 6;
 			$.each(data.Datadir, function (key,value) // loop through response and update as required
 			{
@@ -95,14 +95,16 @@ $(document).ready(function(e){
     //  0: pin is output
     //  1: pin is input
     //  2: pin is input with pull-up
-    $('#save_io').click(function() {
+    $('#save_io').click(function()
+    {
         var urlStr="/arduino"+doSaveStateDir();
 
         $('#loadingall').html('...Saving');
         $('#loadingall').show();
     
         //$.getJSON("stat.json",function(data){ // swap this for line below to test locally
-        $.getJSON(urlStr,function(data){
+        $.getJSON(urlStr,function(data)
+        {
 			console.log( data );
             //alert(data.ret);
             $('#loadingall').hide();
@@ -147,16 +149,15 @@ $(document).ready(function(e){
         $('#loadingall').show();	// Display ...Loading on webpage
 
         //$.getJSON("V_io_test.json",function(data){    // swap this for line below to test locally
-        // Reads the digital and analog inputs and returns the values as a JSON object            
-        $.getJSON("/arduino/in/",function(data)
+        // Reads the digital and analog pins and returns the values as a JSON object            
+        $.getJSON("/arduino/readIO/",function(data)
 		{
 			console.log( data );
 			$('#setdigital_vals').empty();  // empty the div
 			var j = 6;
-			$.each(data.Digital,
-				function (key,value)    // 0/1 digital pin is output with value 0/1     10/11 digital pin is input with value 0/1
-				{
-					var labStr = "D"+j.toString();
+			$.each(data.DigitalYun, function (key,value)    // 0/1 digital pin is output with value 0/1     10/11 digital pin is input with value 0/1
+			{
+					var labelStr = "D"+j.toString();
 
 					// Only to ouputs we assign radio (button). Input which are 10 or 11 do not enter here...
 					if (value.dataval === 0 || value.dataval === 1) 
@@ -164,7 +165,7 @@ $(document).ready(function(e){
 						$('#setdigital_vals').append(
 							'<div id="radiogroup'+j+'" data-role="fieldcontain">\
 								<fieldset data-role="controlgroup" data-type="horizontal" data-mini="true">\
-									<legend>'+labStr+'</legend>\
+									<legend>'+labelStr+'</legend>\
 									<input type="radio" name="radio-val-d'+j+'" id="radio-val-d'+j+'1" value="val-'+j+'1" checked="checked"/>\
 										<label for="radio-val-d'+j+'1">On</label>\
 									<input type="radio" name="radio-val-d'+j+'" id="radio-val-d'+j+'2" value="val-'+j+'2"/>\
@@ -181,8 +182,38 @@ $(document).ready(function(e){
 						else{$('#radio-val-d'+j+'2').prop("checked",false).checkboxradio( "refresh" );}        
 					}
 					j++;
-				});
-				$('#loadingall').hide();
+			});
+
+            var j = 1;
+            $.each(data.DigitalXbee, function (key,value)    // 0/1 digital pin is output with value 0/1     10/11 digital pin is input with value 0/1
+            {
+                    var labelStr = "Xbee"+j.toString();
+
+                    // Only to ouputs we assign radio (button). Input which are 10 or 11 do not enter here...
+                    if (value.dataval === 0 || value.dataval === 1) 
+                    {
+                        $('#setdigital_vals').append(
+                            '<div id="radiogroup'+j+'" data-role="fieldcontain">\
+                                <fieldset data-role="controlgroup" data-type="horizontal" data-mini="true">\
+                                    <legend>'+labelStr+'</legend>\
+                                    <input type="radio" name="radio-val-d'+j+'" id="radio-val-d'+j+'1" value="val-'+j+'1" checked="checked"/>\
+                                        <label for="radio-val-d'+j+'1">On</label>\
+                                    <input type="radio" name="radio-val-d'+j+'" id="radio-val-d'+j+'2" value="val-'+j+'2"/>\
+                                        <label for="radio-val-d'+j+'2">Off</label>\
+                                </fieldset>\
+                            </div>');
+
+                        $('#setdigital_vals').trigger('create');
+
+                        if (value.dataval === 1){$('#radio-val-d'+j+'1').prop("checked",true).checkboxradio( "refresh" );}
+                        else{$('#radio-val-d'+j+'1').prop("checked",false).checkboxradio( "refresh" );}
+
+                        if (value.dataval === 0){$('#radio-val-d'+j+'2').prop("checked",true).checkboxradio( "refresh" );}
+                        else{$('#radio-val-d'+j+'2').prop("checked",false).checkboxradio( "refresh" );}        
+                    }
+                    j++;
+            });
+		    $('#loadingall').hide();
         }); // getJSON
         $('#setdigital_vals').trigger('create');    // trigger a create on parent div to make sure the label and buttons are rendered correctly
         // going through radio objects here won't work as the getJSON is async and items won't be defined.
@@ -191,7 +222,8 @@ $(document).ready(function(e){
     // Send new data values to Yun. String sent to arduino is: /arduino/do/010101010101/
     //  0: set pin LOW if output
     //  1: set pin HIGH if output
-    $('#update_io').click(function() {
+    $('#update_io').click(function() 
+    {
         var urlStr = "/arduino"+doSaveStateOut();
 
         $('#loadingall').html('...Saving');
@@ -199,7 +231,8 @@ $(document).ready(function(e){
 
         //$.getJSON("stat.json",function(data){ // swap this for line below to test locally
         // Send data to Arduino
-        $.getJSON(urlStr,function(data){
+        $.getJSON(urlStr,function(data)
+        {
 			console.log( data );
             //alert(data.ret);
             $('#loadingall').hide();

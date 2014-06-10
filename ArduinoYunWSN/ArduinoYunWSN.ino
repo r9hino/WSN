@@ -18,6 +18,9 @@
 #include <SetXbee.h>
 #include "webServerClass.h"
 
+#define numYunIOPins	7			// Total number of digital IO pins used in Arduino Yun
+#define numXbeeModules  2			// Total number of routers or endpoint connected in the mesh
+
 
 //Thingspeak parameters 
 #define maxFields 4		// Define maximum fields used in thingspeak
@@ -51,18 +54,20 @@ dht DHT;
 YunServer server;
 
 // WebServerClass instance
-#define yunIOPinsNum 7				// Total number of digital IO pins used in Arduino Yun
-byte pinDirs[yunIOPinsNum] = {1,1,1,0,0,0,0};
-byte pinVals[yunIOPinsNum] = {0,0,0,0,0,0,0};	// pinVals gives the input/output values for pins D6,..., D12
-int  anVals[6]  = {0,0,0,0,0,0};	// anVals stores the analog input values for pins A0,..., A5
-webServerClass webServerHandler(yunIOPinsNum, pinDirs, pinVals, anVals);
+byte yunPinDirs[numYunIOPins] = {1,1,1,1,1,0,0};
+byte yunPinVals[numYunIOPins] = {0,0,0,0,0,0,0};	// pinVals gives the input/output values for pins D6,..., D12
+int  yunAnVals[6]  = {0,0,0,0,0,0};	// anVals stores the analog input values for pins A0,..., A5
+byte xbeePinDirs[numXbeeModules] = {0, 0};
+bool xbeePinVals[numXbeeModules] = {0, 0};
+webServerClass webServerHandler(numYunIOPins, numXbeeModules, 
+								yunPinDirs, yunPinVals, yunAnVals,
+								xbeePinDirs, xbeePinVals);
 
 // Xbee instance and variables.
 AltSoftSerial altSoftSerial;	// Arduino Yun use pin5->Tx and pin13->Rx
 SetXbee xbee;
 unsigned char cmdD4[2] = {'D','4'};	// Remote AT command request for IS and D4
 const uint32_t addrXbee[] = {0x40B82646, 0x40A71859};	// Save lsb address for xbee modules
-
 
 // Function prototype. Function declarations.
 void postToThingspeak();
@@ -128,6 +133,8 @@ void setup()
    	altSoftSerial.begin(9600);
 	xbee.setSerialPrint(Console);	// Connection lost if serialPrint is not defined!!!!!!!!!
 	xbee.setSerialXbee(altSoftSerial);
+
+	// TODO add Xbee pins initialization and acknowledge with remote AT commands
 
 	digitalWrite(3, HIGH);
 

@@ -3,20 +3,31 @@
 
 #include "webServerClass.h"
 #include <Bridge.h>
-#include <YunClient.h>
+//#include <YunClient.h>
 
 //*************************************************
 // PUBLIC
-webServerClass::webServerClass(byte yunIOPins, byte pinDirs[], byte pinVals[], int anVals[])
+webServerClass::webServerClass(byte yunIOPins, byte numXbeeModules, 
+							   byte pinDirs[], byte pinVals[], int anVals[],
+							   byte pinDirsXbee[], bool pinValsXbee[])
 {
 	_yunIOPins = yunIOPins;
+	_numXbeeModules = numXbeeModules;
 
-	for(byte i=0; i < _yunIOPins; i++)
+	// Yun variables initialization
+	for(byte i=0; i < _yunIOPins; ++i)
 	{
 		_pinDirs[i] = pinDirs[i];
 		_pinVals[i] = pinVals[i];
 		
 		if(i<6) _anVals[i] = anVals[i];
+	}
+
+	// Xbee variables initialization
+	for(byte i=0; i < numXbeeModules; ++i)
+	{
+		_pinDirsXbee[i] = pinDirsXbee[i];
+		_pinValsXbee[i] = pinValsXbee[i];
 	}
 }
 
@@ -67,7 +78,7 @@ void webServerClass::serverHandle(YunClient client)
 		command = client.readStringUntil('/');
 		command.trim();
 
-		for (byte i=0; i<command.length(); i++)
+		for (byte i=0; i<command.length(); ++i)
 		{
 			_pinDirs[i] = byte(command.charAt(i)-48);
 		}
@@ -89,7 +100,7 @@ void webServerClass::serverHandle(YunClient client)
 		command = client.readStringUntil('/');
 		command.trim();
 
-		for (byte i=0; i<command.length(); i++)
+		for (byte i=0; i<command.length(); ++i)
 		{
 			if (command.charAt(i) != '-')
 			{
@@ -112,8 +123,8 @@ void webServerClass::serverHandle(YunClient client)
 		setPinVals();
 	}    
 
-	// Reads the digital and analog inputs and returns the values as a JSON object
-	if (command == "in")
+	// Reads the digital IO and analog pins and returns the values as a JSON object
+	if (command == "readIO")
 	{
 		// Update data values
 		setPinVals();
@@ -125,14 +136,15 @@ void webServerClass::serverHandle(YunClient client)
 
 		// Set JSON data. First give the data direction definitions
 		client.print("{\"Datadir\" : [");
-		for (byte i=0; i<_yunIOPins; i++)
+		for (byte i=0; i<_yunIOPins; ++i)
 		{
 			client.print("{\"datadir\" : "+String(_pinDirs[i])+"}");  
 			if (i < _yunIOPins-1) client.print(",");
 		}
+
 		// Finish the array, then give the digital input values
-		client.print("],\"Digital\" : [");
-		for (byte i=0; i<_yunIOPins; i++)
+		client.print("],\"DigitalYun\" : [");
+		for (byte i=0; i<_yunIOPins; ++i)
 		{
 			if(_pinDirs[i] == 0)  // Outputs we do assign a value
 			{
@@ -142,15 +154,32 @@ void webServerClass::serverHandle(YunClient client)
 			{
 				client.print("{\"dataval\" : "+String(10+_pinVals[i])+"}");
 			}
-			if (i < _yunIOPins-1) client.print(",");
+			if (i<_yunIOPins-1) client.print(",");
 		}  
+
 		// Finish the array, then give the analog input values
 		client.print("],\"Analog\" : [");
-		for (byte i=0; i<6; i++)
+		for (byte i=0; i<6; ++i)
 		{
 			client.print("{\"dataval\" : "+String(_anVals[i])+"}");
 			if (i<5) client.print(",");
 		}
+
+		// Finish the Xbee array, then give the digital input values
+		client.print("],\"DigitalXbee\" : [");
+		for (byte i=0; i<_numXbeeModules; ++i)
+		{
+			if(_pinDirsXbee[i] == 0)  // Outputs we do assign a value
+			{
+				client.print("{\"dataval\" : "+String(_pinValsXbee[i])+"}");
+			}
+			else  // Inputs we do not assign a value, that is why we add 10
+			{
+				client.print("{\"dataval\" : "+String(10+_pinValsXbee[i])+"}");
+			}
+			if (i<_numXbeeModules-1) client.print(",");
+		} 
+
 		client.print("]}");
 	}
 }
@@ -159,7 +188,7 @@ void webServerClass::serverHandle(YunClient client)
 // Set the pin modes based on the pinDirs[] array
 void webServerClass::setPinDirs()
 {
-	for(byte i=0; i<_yunIOPins; i++)
+	for(byte i=0; i<_yunIOPins; ++i)
 	{
 		if (_pinDirs[i]==0)  pinMode(6+i, OUTPUT);
 		if (_pinDirs[i]==1)  pinMode(6+i, INPUT);
@@ -173,7 +202,7 @@ void webServerClass::setPinDirs()
 // Read the analog input values and store in the anVals[] array
 void webServerClass::setPinVals()
 {
-	for(byte i=0; i<_yunIOPins; i++)
+	for(byte i=0; i<_yunIOPins; ++i)
 	{
 		if (_pinDirs[i]==0 && _pinVals[i]==0) digitalWrite(6+i,LOW);
 		if (_pinDirs[i]==0 && _pinVals[i]==1) digitalWrite(6+i,HIGH);    
@@ -189,7 +218,7 @@ void webServerClass::setPinVals()
 	// a commons ADC. This means that the multiplexor needs to switch
 	// between inputs and time is required for the voltage to stabilise.
 	// Multiple reads with a delay can help
-	for (byte i=0; i<6; i++)
+	for (byte i=0; i<6; ++i)
 	{
 		// first read trigger the switch
 		_anVals[i] = analogRead(i);  
