@@ -6,57 +6,67 @@
 * crontab execute this script every 5 min
 */
 
+#include <AltSoftSerial.h>
 #include <interrupt.h>
 #include <Bridge.h>
 #include <YunServer.h>
 #include <YunClient.h>
-// Include needed for ThingSpeak
 #include <Console.h>
 #include <HttpClient.h>
 #include <dht.h>
+#include <AltSoftSerial.h>
+#include <SetXbee.h>
 #include "webServerClass.h"
 
 
 //Thingspeak parameters 
-#define maxFields 3		// Define maximum fields used in thingspeak
-String thingspeak_update_API = "http://api.thingspeak.com/update?";
-String thingspeak_write_API_key = "key=XWYK90NA07HVY9LM ";//Insert Your Write API key here 
-String thingspeakfield[maxFields] = {"&field1=", "&field2=", "&field3="};
-String thingspeak_sensor[maxFields] = {"Potentiometer", "Humidity", "Temperature"};
+#define maxFields 4		// Define maximum fields used in thingspeak
+String thingspeakUpdateAPI = "http://api.thingspeak.com/update?";
+String thingspeakWriteAPIKey = "key=1EQD8TANGANJHA3J";//Insert Your Write API key here 
+String thingspeakField[maxFields] = {"field1", "field2", "field3", "field4"};
 
-bool sendFlag;			// Indicate when is possible to send data to the server
+// Timing flags
+bool sendFlag = 0;			// Indicate when is possible to send data to the server
 bool retrieveFlag = 0;	// Indicate when is possible to retrieve sensor data
 
 // Define sensor data structure
 #define totalData 5
 typedef struct
 {
-	unsigned int potentiometer;
+    unsigned int yunHdty;					// Filtered humidity
+	unsigned int accumHdty;			// Accumulated humidty
 
-    unsigned int humidity;				// Filtered humidity
-	unsigned int accumHumidity;			// Accumulated humidty
+    unsigned int yunTemp;					// Filtered temperature
+	unsigned int accumTemp;			// Accumulated temperature
 
-    unsigned int temperature;			// Filtered temperature
-	unsigned int accumTemperature;		// Accumulated temperature
+	float xbeeTempSensor[2];
 } sensorData;
 sensorData sData;
 
-// Sensor DHT11 instance
-#define DHT11_PIN   5
+// Sensor DHT11 instance.
+#define DHT11_PIN   2
 dht DHT;
 
 // Listen on default port 5555, Yun webserver will forward there all HTTP requests for us.
 YunServer server;
 
 // WebServerClass instance
-byte pinDirs[11] = {1,1,1,1,1,1,1,1,0,0,0};
-byte pinVals[11] = {0,0,0,0,0,0,0,0,0,0,0};	// pinVals gives the input/output values for pins D2,..., D12
+byte pinDirs[7] = {1,1,1,0,0,0,0};
+byte pinVals[7] = {0,0,0,0,0,0,0};	// pinVals gives the input/output values for pins D6,..., D12
 int  anVals[6]  = {0,0,0,0,0,0};	// anVals stores the analog input values for pins A0,..., A5
 webServerClass webServerHandler(pinDirs, pinVals, anVals);
+
+// Xbee instance and variables.
+AltSoftSerial altSoftSerial;	// Arduino Yun use pin5->Tx and pin13->Rx
+SetXbee xbee;
+unsigned char cmdD4[2] = {'D','4'};	// Remote AT command request for IS and D4
+const uint32_t addrXbee[] = {0x40B82646, 0x40A71859};	// Save lsb address for xbee modules
+
 
 // Function prototype. Function declarations.
 void postToThingspeak();
 void retreiveSensorData();
+float calculateXBeeTemp(unsigned int xbeeAnalog);
 
 
 // Interrupt service routine for Timer1
@@ -64,13 +74,13 @@ ISR(TIMER1_COMPA_vect)
 { //<---- No problem, just intellisense complaining
 	//Do not use Console.print()! Console.println(">ISR()\t");
 	
-	// Toggle LED
+	// Heart beat LED
 	static boolean state = false;
 	state = !state;  // toggle
-	digitalWrite(13, state ? HIGH : LOW); //digitalWrite(13, digitalRead(13) ^ 1);
+	digitalWrite(3, state ? HIGH : LOW); //digitalWrite(3, digitalRead(3) ^ 1);
 
-	static int sendCount = 0;	    // Count how many second has pass
-	static int retrieveCount = 0;	// Count how many second has pass
+	static int sendCount = 0;	    // Count how many second had pass
+	static int retrieveCount = 0;	// Count how many second had pass
 
 	sendCount++;
 	// Enter each 15 sec to send data to thingspeak server
@@ -92,28 +102,33 @@ ISR(TIMER1_COMPA_vect)
 
 void setup()
 {
-	pinMode(13, OUTPUT);
-    digitalWrite(13, LOW);
+	pinMode(3, OUTPUT);
+    digitalWrite(3, LOW);
 
 	//Initialize structure values
-	sData.accumHumidity = 0;
-	sData.accumTemperature = 0;
+	sData.accumHdty = 0;
+	sData.accumTemp = 0;
 
     // Initialize Bridge.
     Bridge.begin();
     // Initialize linux console-serial.
     Console.begin();
-	// Initialize avr serial
-	//Serial.begin(115200);
 
 	// Setting up the web server. Listen for incoming connection.
 	server.noListenOnLocalhost();
     server.begin();
-	// Initialise digital input/output directions
-    // set output values, read digital and analog inputs
+	// Initialise digital input/output directions, set output values, read digital and analog inputs
 	webServerHandler.setPinDirs();
     webServerHandler.setPinVals();
-	digitalWrite(13, HIGH);
+	//pinMode(5, OUTPUT);
+	//digitalWrite(5, LOW);
+
+	// Start serial communications for xbee
+   	altSoftSerial.begin(9600);
+	xbee.setSerialPrint(Console);	// Connection lost if serialPrint is not defined!!!!!!!!!
+	xbee.setSerialXbee(altSoftSerial);
+
+	digitalWrite(3, HIGH);
 
     // Initiallize Timer1
     noInterrupts();         // Disable all interrupts
@@ -127,8 +142,8 @@ void setup()
 // Main loop
 void loop()
 {  
-	// Retrieve sensor data each 2 second. A total of 5 data will be get
-	// before sendFlag (15sec) is set. 
+	// Retrieve sensor data each 2 second. 
+	// A total of 5 data (10 sec) will be store before sendFlag (15sec) is set. 
 	if(retrieveFlag == 1)
 	{
 		retrieveFlag = 0;
@@ -138,10 +153,8 @@ void loop()
   	// Send data to ThingSpeak each 15 seconds
 	if(sendFlag == 1)
 	{
-		//Console.println(">TS()\t");
 		sendFlag = 0;
 		postToThingspeak();
-		//Console.println("<TS()");
 	}
   
 	// Get clients coming from server
@@ -149,11 +162,15 @@ void loop()
 	// There is a new client?
 	if (client)
 	{
-		//Console.println(">SH()\t");
 		webServerHandler.serverHandle(client); 
 		// Close connection and free resources.
 		client.stop();
-		//Console.println("<SH()\t");
+		// Set remote xbee pins if local pins 9 and 10 are set via JS.
+		if(digitalRead(9) == 1)   xbee.sendRemoteATCmdReq(addrXbee[0], 16, OPT_APPLY_CHANGES, cmdD4, 0x05, true);
+		else   xbee.sendRemoteATCmdReq(addrXbee[0], 16, OPT_APPLY_CHANGES, cmdD4, 0x04, true);
+
+		if(digitalRead(10) == 1)   xbee.sendRemoteATCmdReq(addrXbee[1], 16, OPT_APPLY_CHANGES, cmdD4, 0x05, true);
+		else   xbee.sendRemoteATCmdReq(addrXbee[1], 16, OPT_APPLY_CHANGES, cmdD4, 0x04, true);
 	}
 	delay(50);
 }
@@ -164,18 +181,16 @@ void postToThingspeak(){
 	char charIn; 
 	String bufferIn;
 	String request_string; 
-	
-	//retreiveSensorData();
 
-	request_string = thingspeak_update_API + thingspeak_write_API_key + 
-			         thingspeakfield[0] + String(sData.potentiometer) + 
-					 thingspeakfield[1] + String(sData.humidity) + 
-					 thingspeakfield[2] + String(sData.temperature);
-	// Make a HTTP request:
+	request_string = thingspeakUpdateAPI + thingspeakWriteAPIKey + 
+			         "&" + thingspeakField[0] + "=" + String(sData.yunHdty) + 
+					 "&" + thingspeakField[1] + "=" + String(sData.yunTemp) +
+					 "&" + thingspeakField[2] + "=" + String(sData.xbeeTempSensor[0]) +
+					 "&" + thingspeakField[3] + "=" + String(sData.xbeeTempSensor[1]);
+	// Make a HTTP request.
 	client.get(request_string);
   
-	// if there are incoming bytes available 
-	// from the server, read them and print them:  
+	// If there are incoming bytes available from the server, read them and print them.
 	while(client.available())
 	{
 		charIn = client.read();
@@ -185,14 +200,10 @@ void postToThingspeak(){
 	{
 		Console.print(bufferIn);
 		Console.println("\tUpdate Completed:");
-		Console.print("\t" + thingspeak_sensor[0] + " Value: ");
-		Console.println(sData.potentiometer);
-
-		Console.print("\t" + thingspeak_sensor[1] + " Value: ");
-		Console.println(sData.humidity);
-			
-		Console.print("\t" + thingspeak_sensor[2] + " Value: ");
-		Console.println(sData.temperature);
+		Console.print("\tYun Hdty Value: "); Console.println(sData.yunHdty);
+		Console.print("\tYun Temp Value: "); Console.println(sData.yunTemp);
+		Console.print("\tXbee Temp1 Value: "); Console.println(sData.xbeeTempSensor[0]);
+		Console.print("\tXbee Temp2 Value: "); Console.println(sData.xbeeTempSensor[1]);
 	}
 	else
 	{
@@ -203,22 +214,51 @@ void postToThingspeak(){
 
 void retreiveSensorData()
 {
+	// Get xbee sensor information
+	xbee.readPacket();
+
+	// Only if new data is available and complete will proceed.
+	if(xbee.isRxComplete())
+	{
+		// Modules will sample at 6 second each, so retreiveSensorData() must be enought faster to ahndle it.
+		if(xbee.getRxLsbAddr64() == addrXbee[0])
+		{
+			sData.xbeeTempSensor[0] = calculateXBeeTemp(xbee.getADC3());
+			//xbee.sendRemoteATCmdReq(addrXbee[0], 16, OPT_APPLY_CHANGES, cmdD4, 0x05, true);
+			//xbee.sendRemoteATCmdReq(addrXbee[0], 16, OPT_APPLY_CHANGES, cmdD4, 0x04, true);
+			//Console.println(sData.xbeeTempSensor[0]);
+		}
+		else if(xbee.getRxLsbAddr64() == addrXbee[1])
+		{
+			sData.xbeeTempSensor[1] = calculateXBeeTemp(xbee.getADC3());
+			//xbee.sendRemoteATCmdReq(addrXbee[1], 16, OPT_APPLY_CHANGES, cmdD4, 0x05, true);
+			//xbee.sendRemoteATCmdReq(addrXbee[1], 16, OPT_APPLY_CHANGES, cmdD4, 0x04, true);
+			//Console.println(sData.xbeeTempSensor[1]);
+		}
+	}
+
 	static int countData = 0;	// Count collected data
-	sData.potentiometer = analogRead(A1);
+	//sData.potentiometer = analogRead(A1);
 
 	// Read Data
 	if(DHT.read11(DHT11_PIN) == DHTLIB_OK)
 	{
 		//Console.println("DHT11 OK.\t"); 
 		countData++;
+<<<<<<< HEAD
 		sData.accumHumidity += DHT.humidity;
 		sData.accumTemperature += DHT.temperature;
 		if(countData == totalData)	// Total collected data equal to 5
+=======
+		sData.accumHdty += DHT.humidity;
+		sData.accumTemp += DHT.temperature;
+		if(countData == totalData)	// Total collected data equal to 8
+>>>>>>> develop
 		{
-			sData.humidity = sData.accumHumidity/totalData;
-			sData.temperature = sData.accumTemperature/totalData;
-			sData.accumHumidity = 0;
-			sData.accumTemperature = 0;
+			sData.yunHdty = sData.accumHdty/totalData;
+			sData.yunTemp = sData.accumTemp/totalData;
+			sData.accumHdty = 0;
+			sData.accumTemp = 0;
 			countData = 0;
 		}
 	}
@@ -226,4 +266,16 @@ void retreiveSensorData()
 	{
 		Console.println("DHT11 Error,\t"); 
 	}	
+}
+
+// This function takes an XBee analog pin reading and converts it to a voltage value
+float calculateXBeeTemp(unsigned int xbeeAnalog) {
+	float volt = ((float)xbeeAnalog/1023)*1.23; //Convert the analog value to a voltage value
+  
+	float temp = 0;
+	// Calculate temp in C, .75 volts is 25 C. 10mV per degree
+	if (volt <= .75) { temp = 25 - ((.75-volt)/.01); } //if below 25 C
+	else { temp = 25 + ((volt -.75)/.01); } //if above 25
+	
+	return temp;
 }

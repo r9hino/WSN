@@ -47,10 +47,11 @@ extern "C" void __cxa_pure_virtual() {;}
 //
 void postToThingspeak();
 void retreiveSensorData();
+float calculateXBeeTemp(unsigned int xbeeAnalog);
 
 #include "C:\Program Files (x86)\Arduino\hardware\arduino\avr\cores\arduino\arduino.h"
 #include "C:\Program Files (x86)\Arduino\hardware\arduino\avr\variants\yun\pins_arduino.h" 
-#include "D:\Dropbox\Git\WSN\ArduinoYunWSN\ArduinoYunWSN.ino"
-#include "D:\Dropbox\Git\WSN\ArduinoYunWSN\webServerClass.cpp"
-#include "D:\Dropbox\Git\WSN\ArduinoYunWSN\webServerClass.h"
+#include "D:\Dropbox\Projects\Arduino\WSN\ArduinoYunWSN\ArduinoYunWSN.ino"
+#include "D:\Dropbox\Projects\Arduino\WSN\ArduinoYunWSN\webServerClass.cpp"
+#include "D:\Dropbox\Projects\Arduino\WSN\ArduinoYunWSN\webServerClass.h"
 #endif
