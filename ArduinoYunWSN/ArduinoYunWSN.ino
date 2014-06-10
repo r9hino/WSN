@@ -123,9 +123,10 @@ void setup()
 	// Setting up the web server. Listen for incoming connection.
 	server.noListenOnLocalhost();
     server.begin();
+
 	// Initialise digital input/output directions, set output values, read digital and analog inputs
-	webServerHandler.setPinDirs();
-    webServerHandler.setPinVals();
+	webServerHandler.setYunPinDirs();
+    webServerHandler.setYunPinVals();
 	//pinMode(5, OUTPUT);
 	//digitalWrite(5, LOW);
 
