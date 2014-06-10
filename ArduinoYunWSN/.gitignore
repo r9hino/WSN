@@ -5,6 +5,9 @@
 *.suo
 *.user
 *.sln.docstates
+*.vsarduino.h
+*.xml
+*.vcxproj
 
 # Build results
 [Dd]ebug/
