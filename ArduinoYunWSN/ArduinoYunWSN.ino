@@ -79,8 +79,8 @@ ISR(TIMER1_COMPA_vect)
 	state = !state;  // toggle
 	digitalWrite(3, state ? HIGH : LOW); //digitalWrite(3, digitalRead(3) ^ 1);
 
-	static int sendCount = 0;	    // Count how many second has pass
-	static int retrieveCount = 0;	// Count how many second has pass
+	static int sendCount = 0;	    // Count how many second had pass
+	static int retrieveCount = 0;	// Count how many second had pass
 
 	sendCount++;
 	// Enter each 15 sec to send data to thingspeak server
@@ -220,6 +220,7 @@ void retreiveSensorData()
 	// Only if new data is available and complete will proceed.
 	if(xbee.isRxComplete())
 	{
+		// Modules will sample at 6 second each, so retreiveSensorData() must be enought faster to ahndle it.
 		if(xbee.getRxLsbAddr64() == addrXbee[0])
 		{
 			sData.xbeeTempSensor[0] = calculateXBeeTemp(xbee.getADC3());

@@ -10,10 +10,6 @@
 // PUBLIC
 webServerClass::webServerClass(byte _pinDirs[7], byte _pinVals[7], int _anVals[6])
 {
-	// Setting up the web server. Listen for incoming connection.
-    //server.noListenOnLocalhost();
-    //server.begin();
-
 	for(i = 0; i < 7; i++)
 	{
 		pinDirs[i] = _pinDirs[i];
@@ -26,7 +22,7 @@ webServerClass::webServerClass(byte _pinDirs[7], byte _pinVals[7], int _anVals[6
 
 void webServerClass::serverHandle(YunClient client)
 {
-	// read the command
+	// Read the command
 	String command;
 	command = client.readStringUntil('/');
 	command.trim();        //kill whitespace
@@ -63,7 +59,6 @@ void webServerClass::serverHandle(YunClient client)
 		client.print(tableJSON);
 	}*/
 
-	// command = io
 	// This sets the direction of data for the digital pins. 
 	// See definition of pinDirs[] above returns a JSON "OK" object when finished
 	if(command == "io")
@@ -87,9 +82,7 @@ void webServerClass::serverHandle(YunClient client)
 		setPinDirs();
 	}
 
-	// command = do
-	// This sets values for the digital output pins
-	// returns a JSON "OK" object when finished
+	// This sets values for the digital output pins, and returns a JSON "OK" object when finished
 	if (command == "do")
 	{
 		command = client.readStringUntil('/');
@@ -107,40 +100,36 @@ void webServerClass::serverHandle(YunClient client)
 			}
 		}
 
-		// set JSON header
+		// Set JSON header
 		client.println("Status: 200");
 		client.println("Content-type: application/json");
 		client.println();
-		// return ok status
+		// Return ok status
 		client.print("{\"ret\":\"ok\"}");
 
-		// update data values
+		// Update data values
 		setPinVals();
 	}    
 
-	// command = in
-	// This reads the digital and analog inputs
-	// and returns the values as a JSON object
+	// This reads the digital and analog inputs and returns the values as a JSON object
 	if (command == "in")
 	{
-		// update data values
+		// Update data values
 		setPinVals();
 
-		// set JSON header
+		// Set JSON header
 		client.println("Status: 200");
 		client.println("Content-type: application/json");
 		client.println();
 
-		// set JSON data
-		// first give the data direction definitions
+		// Set JSON data. First give the data direction definitions
 		client.print("{\"Datadir\" : [");
 		for (i=0; i<7; i++)
 		{
 			client.print("{\"datadir\" : "+String(pinDirs[i])+"}");  
 			if (i < 6) client.print(",");
 		}
-		// finish the array
-		// then give the digital input values
+		// Finish the array, then give the digital input values
 		client.print("],\"Digital\" : [");
 		for (i=0; i<7; i++)
 		{
@@ -154,8 +143,7 @@ void webServerClass::serverHandle(YunClient client)
 			}
 			if (i < 6) client.print(",");
 		}  
-		// finish the array
-		// then give the analog input values
+		// Finish the array, then give the analog input values
 		client.print("],\"Analog\" : [");
 		for (i=0; i<6; i++)
 		{

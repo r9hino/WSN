@@ -136,11 +136,11 @@ $(document).ready(function(e){
 //                      PAGE 3 FUNCTIONS
 // *****************************************************************************
 
-    // when page 3 selected from the main menu call the function to read the
+    // When page 3 selected from the main menu call the function to read the
     // current digital output values and update the radio selections
     $('#callinitp3').click(function() {initpage3();});
 
-    // function to make a call to the Yun and use the JSON data sent back to initialise the
+    // Function to make a call to the Yun and use the JSON data sent back to initialise the
     // radio selections for the current digital output values
     function initpage3()
     {
@@ -148,6 +148,7 @@ $(document).ready(function(e){
         $('#loadingall').show();	// Display ...Loading on webpage
 
         //$.getJSON("V_io_test.json",function(data){    // swap this for line below to test locally
+        // Reads the digital and analog inputs and returns the values as a JSON object            
         $.getJSON("/arduino/in/",function(data)
 		{
 			console.log( data );
@@ -188,9 +189,7 @@ $(document).ready(function(e){
         // going through radio objects here won't work as the getJSON is async and items won't be defined.
     }
 
-    // Send new data values to Yun
-    // string sent to arduino is: /arduino/do/010101010101/
-    //
+    // Send new data values to Yun. String sent to arduino is: /arduino/do/010101010101/
     //  0: set pin LOW if output
     //  1: set pin HIGH if output
 
@@ -201,6 +200,7 @@ $(document).ready(function(e){
         $('#loadingall').show();
 
         //$.getJSON("stat.json",function(data){ // swap this for line below to test locally
+        // Send data to Arduino
         $.getJSON(urlStr,function(data){
 			console.log( data );
             //alert(data.ret);
@@ -208,7 +208,7 @@ $(document).ready(function(e){
         });
     });
 
-    // construct the save-state string to send
+    // Construct the save-state string to send
     function doSaveStateOut()
 	{
         var RVal = "/do/";
@@ -228,7 +228,7 @@ $(document).ready(function(e){
         return RVal;
     }
 
-    // this returns a value of 0 or 1 depending on the selection in the given radio group 
+    // This returns a value of 0 or 1 depending on the selection in the given radio group 
     function getRadioStateDVal(RGSelection)
     {
         var k = 0;
