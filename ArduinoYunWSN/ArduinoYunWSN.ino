@@ -51,10 +51,11 @@ dht DHT;
 YunServer server;
 
 // WebServerClass instance
-byte pinDirs[7] = {1,1,1,0,0,0,0};
-byte pinVals[7] = {0,0,0,0,0,0,0};	// pinVals gives the input/output values for pins D6,..., D12
+#define yunIOPinsNum 7				// Total number of digital IO pins used in Arduino Yun
+byte pinDirs[yunIOPinsNum] = {1,1,1,0,0,0,0};
+byte pinVals[yunIOPinsNum] = {0,0,0,0,0,0,0};	// pinVals gives the input/output values for pins D6,..., D12
 int  anVals[6]  = {0,0,0,0,0,0};	// anVals stores the analog input values for pins A0,..., A5
-webServerClass webServerHandler(pinDirs, pinVals, anVals);
+webServerClass webServerHandler(yunIOPinsNum, pinDirs, pinVals, anVals);
 
 // Xbee instance and variables.
 AltSoftSerial altSoftSerial;	// Arduino Yun use pin5->Tx and pin13->Rx

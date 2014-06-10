@@ -22,7 +22,7 @@ $(document).ready(function(e){
 //                      PAGE 2 FUNCTIONS
 // *****************************************************************************    
 
-	// this function unchecks all the radio selections for page 2
+	// This function unchecks all the radio selections for page 2
     function blankpage2()
     {
         for (var j=6; j<=12; j++)
@@ -33,7 +33,7 @@ $(document).ready(function(e){
         }
     }
 
-    // set up the radio groups to allow pin data direction selection
+    // Set up the radio groups to allow pin data direction selection
     // between output, input and input with internal pull-up enabled
     function populate_page2()
     {
@@ -63,7 +63,7 @@ $(document).ready(function(e){
     // so that pins shown are D6 ... D12
     populate_page2();
 
-    // function to make a call to the Yun and use the JSON data sent back to initialise the radio selections
+    // Function to make a call to the Yun and use the JSON data sent back to initialise the radio selections
     function initpage2()
     {
         $('#loadingall').html('...Loading');
@@ -87,12 +87,11 @@ $(document).ready(function(e){
         }); 
     }
 
-	// when page 2 selected from the main menu call the function to read the
+	// When page 2 selected from the main menu call the function to read the
     // current data directions and update the radio selections 
     $('#callinitp2').click(function() {initpage2();});
 
-    // Send new data direction to Yun
-    // string sent to arduino is of the form: /arduino/io/012012012012/
+    // Send new data direction to Yun, string sent to arduino is of the form: /arduino/io/012012012012/
     //  0: pin is output
     //  1: pin is input
     //  2: pin is input with pull-up
@@ -110,7 +109,7 @@ $(document).ready(function(e){
         });
     });
 
-    // construct the save-state string to send
+    // Construct the save-state string to send
     function doSaveStateDir(){  
         var RVal="/io/";
         for (var j=6; j<=12; j++)
@@ -122,7 +121,7 @@ $(document).ready(function(e){
         return RVal;
     }           
 
-    // this returns a value of 0, 1 or 2 depending on the selection in the given radio group 
+    // This returns a value of 0, 1 or 2 depending on the selection in the given radio group 
     function getRadioStateDDir(RGSelection)
     {
         var k = 0;
@@ -192,7 +191,6 @@ $(document).ready(function(e){
     // Send new data values to Yun. String sent to arduino is: /arduino/do/010101010101/
     //  0: set pin LOW if output
     //  1: set pin HIGH if output
-
     $('#update_io').click(function() {
         var urlStr = "/arduino"+doSaveStateOut();
 
