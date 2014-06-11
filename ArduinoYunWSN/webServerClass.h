@@ -10,16 +10,16 @@
 class webServerClass
 {
 public:
-	webServerClass(byte yunIOPins, byte numXbeeModules,
-				   byte YunPinDirs[7], byte YunPinVals[7], int YunAnVals[6],
-				   byte *ptrXbeePinDirs, bool *ptrXbeePinVals);
+	webServerClass(byte numYunIOPins, byte numXbeeModules,
+				   byte *YunPinDirs, byte *YunPinVals, int *YunAnVals,
+				   byte *XbeePinDirs, bool *XbeePinVals);
 	void serverHandle(YunClient client);
 	void setYunPinDirs();
 	void setYunPinVals();
 
 private:
 	// Number of digital IO that Arduino Yun has available.
-	byte _yunIOPins;
+	byte _numYunIOPins;
 
 	// Number of Xbee modules available.
 	byte _numXbeeModules;
@@ -27,9 +27,9 @@ private:
 
 	// pinDirs gives data direction for D6,D7, ... D12
 	//	0: output  1: input   2: input with internal pull-up enabled
-	byte _YunPinDirs[7];	// = {1,1,1,0,0,0,0};
-	byte _YunPinVals[7];	//= {0,0,0,0,0,0,0};	// pinVals gives the input/output values for pins D2,..., D13
-	int  _YunAnVals[6];	//= {0,0,0,0,0,0};	// anVals stores the analog input values for pins A0,..., A5
+	byte* _ptrYunPinDirs;	// Pointer to yunPinDirs array.
+	byte* _ptrYunPinVals;	// Pointer to yunPinVals array.
+	int* _ptrYunAnVals;		// Pointer to yunAnVals array.
 
 	byte* _ptrXbeePinDirs;	// Direction mask array for each IO of Xbee modules.
 	bool* _ptrXbeePinVals;	// Value mask array for each IO of Xbee modules.

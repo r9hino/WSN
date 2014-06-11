@@ -196,20 +196,20 @@ $(document).ready(function(e){
                             '<div id="radiogroup'+j+'" data-role="fieldcontain">\
                                 <fieldset data-role="controlgroup" data-type="horizontal" data-mini="true">\
                                     <legend>'+labelStr+'</legend>\
-                                    <input type="radio" name="radio-val-d'+j+'" id="radio-val-d'+j+'1" value="val-'+j+'1" checked="checked"/>\
-                                        <label for="radio-val-d'+j+'1">On</label>\
-                                    <input type="radio" name="radio-val-d'+j+'" id="radio-val-d'+j+'2" value="val-'+j+'2"/>\
-                                        <label for="radio-val-d'+j+'2">Off</label>\
+                                    <input type="radio" name="radio-val-xbee-d'+j+'" id="radio-val-xbee-d'+j+'1" value="val-'+j+'1" checked="checked"/>\
+                                        <label for="radio-val-xbee-d'+j+'1">On</label>\
+                                    <input type="radio" name="radio-val-xbee-d'+j+'" id="radio-val-xbee-d'+j+'2" value="val-'+j+'2"/>\
+                                        <label for="radio-val-xbee-d'+j+'2">Off</label>\
                                 </fieldset>\
                             </div>');
 
                         $('#setdigital_vals').trigger('create');
 
-                        if (value.dataval === 1){$('#radio-val-d'+j+'1').prop("checked",true).checkboxradio( "refresh" );}
-                        else{$('#radio-val-d'+j+'1').prop("checked",false).checkboxradio( "refresh" );}
+                        if (value.dataval === 1){$('#radio-val-xbee-d'+j+'1').prop("checked",true).checkboxradio( "refresh" );}
+                        else{$('#radio-val-xbee-d'+j+'1').prop("checked",false).checkboxradio( "refresh" );}
 
-                        if (value.dataval === 0){$('#radio-val-d'+j+'2').prop("checked",true).checkboxradio( "refresh" );}
-                        else{$('#radio-val-d'+j+'2').prop("checked",false).checkboxradio( "refresh" );}        
+                        if (value.dataval === 0){$('#radio-val-xbee-d'+j+'2').prop("checked",true).checkboxradio( "refresh" );}
+                        else{$('#radio-val-xbee-d'+j+'2').prop("checked",false).checkboxradio( "refresh" );}        
                     }
                     j++;
             });
@@ -219,7 +219,7 @@ $(document).ready(function(e){
         // going through radio objects here won't work as the getJSON is async and items won't be defined.
     }
 
-    // Send new data values to Yun. String sent to arduino is: /arduino/do/010101010101/
+    // Send new data values to Yun. String sent to arduino is: /arduino/do/1010101/10
     //  0: set pin LOW if output
     //  1: set pin HIGH if output
     $('#update_io').click(function() 
@@ -244,6 +244,7 @@ $(document).ready(function(e){
 	{
         var RVal = "/do/";
 
+        // Yun pins output
         for (var j=6; j<=12; j++)
         {
             if ($('#radio-val-d'+j+'1').length > 0)
@@ -256,6 +257,22 @@ $(document).ready(function(e){
             }
         }   
         RVal += "/";
+
+        // Xbee pins output
+        for (var j=1; j<=2; j++)
+        {
+            if ($('#radio-val-xbee-d'+j+'1').length > 0)
+            {
+                RVal += getRadioStateDVal('#radio-val-xbee-d'+j);
+            }
+            else
+            {
+                RVal += "-";
+            }
+        }   
+        RVal += "/";
+
+        // /do/0000011/01
         return RVal;
     }
 

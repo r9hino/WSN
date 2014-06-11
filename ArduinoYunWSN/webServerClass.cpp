@@ -7,30 +7,19 @@
 
 //*************************************************
 // PUBLIC
-webServerClass::webServerClass(byte yunIOPins, byte numXbeeModules, 
-							   byte YunPinDirs[], byte YunPinVals[], int YunAnVals[],
-							   byte *ptrXbeePinDirs, bool *ptrXbeePinVals)
+webServerClass::webServerClass(byte numYunIOPins, byte numXbeeModules, 
+							   byte *yunPinDirs, byte *yunPinVals, int *yunAnVals,
+							   byte *xbeePinDirs, bool *xbeePinVals)
 {
-	_yunIOPins = yunIOPins;
+	_numYunIOPins = numYunIOPins;
 	_numXbeeModules = numXbeeModules;
 
-	// Yun variables initialization
-	for(byte i=0; i < _yunIOPins; ++i)
-	{
-		_YunPinDirs[i] = YunPinDirs[i];
-		_YunPinVals[i] = YunPinVals[i];
-		
-		if(i<6) _YunAnVals[i] = YunAnVals[i];
-	}
+	_ptrYunPinDirs = yunPinDirs;
+	_ptrYunPinVals = yunPinVals;
+	_ptrYunAnVals = yunAnVals;
 
-	// Xbee variables initialization
-	//for(byte i=0; i < numXbeeModules; ++i)
-	//{
-	//	_pinDirsXbee[i] = pinDirsXbee[i];
-	//	_pinValsXbee[i] = pinValsXbee[i];
-	//}
-	_ptrXbeePinDirs = ptrXbeePinDirs;
-	_ptrXbeePinVals = ptrXbeePinVals;
+	_ptrXbeePinDirs = xbeePinDirs;
+	_ptrXbeePinVals = xbeePinVals;
 }
 
 
@@ -82,7 +71,7 @@ void webServerClass::serverHandle(YunClient client)
 
 		for (byte i=0; i<command.length(); ++i)
 		{
-			_YunPinDirs[i] = byte(command.charAt(i)-48);
+			*(_ptrYunPinDirs+i) = byte(command.charAt(i)-48);
 		}
 
 		// Set JSON header
@@ -99,19 +88,22 @@ void webServerClass::serverHandle(YunClient client)
 	// This sets values for the digital output pins, and returns a JSON "OK" object when finished
 	if (command == "do")
 	{
+		// Save Yun output values.
 		command = client.readStringUntil('/');
 		command.trim();
-
 		for (byte i=0; i<command.length(); ++i)
 		{
-			if (command.charAt(i) != '-')
-			{
-				_YunPinVals[i] = byte(command.charAt(i)-48);
-			}
-			else
-			{
-				_YunPinVals[i] = 255;
-			}
+			if (command.charAt(i) != '-')	*(_ptrYunPinVals+i) = byte(command.charAt(i)-48);
+			else   *(_ptrYunPinVals+i) = 255;
+		}
+
+		// Save Xbee output values in xbeePinVals array.
+		command = client.readStringUntil('/');
+		command.trim();
+		for (byte i=0; i<command.length(); ++i)
+		{
+			if (command.charAt(i) != '-')	*(_ptrXbeePinVals+i) = byte(command.charAt(i)-48);
+			else	*(_ptrXbeePinVals+i) = 255;
 		}
 
 		// Set JSON header
@@ -138,45 +130,45 @@ void webServerClass::serverHandle(YunClient client)
 
 		// Set JSON data. First give the data direction definitions
 		client.print("{\"Datadir\" : [");
-		for (byte i=0; i<_yunIOPins; ++i)
+		for (byte i=0; i<_numYunIOPins; ++i)
 		{
-			client.print("{\"datadir\" : "+String(_YunPinDirs[i])+"}");  
-			if (i < _yunIOPins-1) client.print(",");
+			client.print("{\"datadir\" : "+String( *(_ptrYunPinDirs+i))+"}");  
+			if (i < _numYunIOPins-1) client.print(",");
 		}
 
 		// Finish the array, then give the digital input values
 		client.print("],\"DigitalYun\" : [");
-		for (byte i=0; i<_yunIOPins; ++i)
-		{
-			if(_YunPinDirs[i] == 0)  // Outputs we do assign a value
-			{
-				client.print("{\"dataval\" : "+String(_YunPinVals[i])+"}");
+		for (byte i=0; i<_numYunIOPins; ++i)
+		{		  // yunPinDirs[i]
+			if( *(_ptrYunPinDirs+i) == 0 )  // Outputs we do assign a value
+			{											 // yunPinVals[i]
+				client.print("{\"dataval\" : "+String( *(_ptrYunPinVals+i) )+"}");
 			}
 			else  // Inputs we do not assign a value, that is why we add 10
-			{
-				client.print("{\"dataval\" : "+String(10+_YunPinVals[i])+"}");
+			{												// yunPinVals[i]
+				client.print("{\"dataval\" : "+String( 10+*(_ptrYunPinVals+i) )+"}");
 			}
-			if (i<_yunIOPins-1) client.print(",");
+			if (i<_numYunIOPins-1) client.print(",");
 		}  
 
 		// Finish the array, then give the analog input values
 		client.print("],\"Analog\" : [");
 		for (byte i=0; i<6; ++i)
-		{
-			client.print("{\"dataval\" : "+String(_YunAnVals[i])+"}");
+		{											//yunAnVals[i]
+			client.print("{\"dataval\" : "+String( *(_ptrYunAnVals+i) )+"}");
 			if (i<5) client.print(",");
 		}
 
 		// Finish the Xbee array, then give the digital input values
 		client.print("],\"DigitalXbee\" : [");
 		for (byte i=0; i<_numXbeeModules; ++i)
-		{
+		{		 // xbeePinDirs[i]
 			if(*(_ptrXbeePinDirs+i) == 0)  // Outputs we do assign a value
-			{
+			{											// xbeePinVals[i]
 				client.print("{\"dataval\" : "+String( *(_ptrXbeePinVals+i) )+"}");
 			}
 			else  // Inputs we do not assign a value, that is why we add 10
-			{
+			{												// xbeePinVals[i]
 				client.print("{\"dataval\" : "+String( 10+*(_ptrXbeePinVals+i) )+"}");
 			}
 			if (i<_numXbeeModules-1) client.print(",");
@@ -190,28 +182,28 @@ void webServerClass::serverHandle(YunClient client)
 // Set the pin modes based on the pinDirs[] array
 void webServerClass::setYunPinDirs()
 {
-	for(byte i=0; i<_yunIOPins; ++i)
-	{
-		if (_YunPinDirs[i]==0)  pinMode(6+i, OUTPUT);
-		if (_YunPinDirs[i]==1)  pinMode(6+i, INPUT);
-		if (_YunPinDirs[i]==2)  pinMode(6+i, INPUT_PULLUP);
+	for(byte i=0; i<_numYunIOPins; ++i)
+	{			// yunPinDirs[i]
+		if ( *(_ptrYunPinDirs+i)==0 )  pinMode(6+i, OUTPUT);
+		if ( *(_ptrYunPinDirs+i)==1 )  pinMode(6+i, INPUT);
+		if ( *(_ptrYunPinDirs+i)==2 )  pinMode(6+i, INPUT_PULLUP);
 	}
 }
 
 
-// Set the output pin values based on the pinVals[] array
-// Read the digital input values and store in the pinVals[] array
-// Read the analog input values and store in the anVals[] array
+// Set the output pin values based on the yunPinVals[] array
+// Read the digital input values and store in the yunPinVals[] array
+// Read the analog input values and store in the yunAnVals[] array
 void webServerClass::setYunPinVals()
 {
-	for(byte i=0; i<_yunIOPins; ++i)
-	{
-		if (_YunPinDirs[i]==0 && _YunPinVals[i]==0) digitalWrite(6+i,LOW);
-		if (_YunPinDirs[i]==0 && _YunPinVals[i]==1) digitalWrite(6+i,HIGH);    
-		if (_YunPinDirs[i]==1 || _YunPinDirs[i]==2)
-		{
-			if (digitalRead(6+i)==LOW)   _YunPinVals[i]=0;
-			if (digitalRead(6+i)==HIGH)  _YunPinVals[i]=1;
+	for(byte i=0; i<_numYunIOPins; ++i)
+	{			// yunPinDirs[i]		  // yunPinVals[i]
+		if ( *(_ptrYunPinDirs+i)==0 && *(_ptrYunPinVals+i)==0 ) digitalWrite(6+i,LOW);
+		if ( *(_ptrYunPinDirs+i)==0 && *(_ptrYunPinVals+i)==1 ) digitalWrite(6+i,HIGH);    
+		if ( *(_ptrYunPinDirs+i)==1 || *(_ptrYunPinDirs+i)==2 )
+		{									// yunPinVals[i]
+			if (digitalRead(6+i)==LOW)   *(_ptrYunPinVals+i)=0;
+			if (digitalRead(6+i)==HIGH)  *(_ptrYunPinVals+i)=1;
 		}
 	}  
 
@@ -223,10 +215,12 @@ void webServerClass::setYunPinVals()
 	for (byte i=0; i<6; ++i)
 	{
 		// first read trigger the switch
-		_YunAnVals[i] = analogRead(i);  
+		  //yunAnVals[i]
+		*(_ptrYunAnVals+i) = analogRead(i);  
 		// delay to let voltage stabilise
 		//delay(20);
 		// Next read gives correct reading with no ghosting from other channels		
-		_YunAnVals[i] = analogRead(i);  
+		  //yunAnVals[i]
+		*(_ptrYunAnVals+i) = analogRead(i);  
 	}
 }

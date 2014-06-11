@@ -175,10 +175,10 @@ void loop()
 		// Close connection and free resources.
 		client.stop();
 		// Set remote xbee pins if local pins 9 and 10 are set via JS.
-		if(digitalRead(9) == 1)   xbee.sendRemoteATCmdReq(addrXbee[0], 16, OPT_APPLY_CHANGES, cmdD4, 0x05, true);
+		if(xbeePinVals[0] == 1)   xbee.sendRemoteATCmdReq(addrXbee[0], 16, OPT_APPLY_CHANGES, cmdD4, 0x05, true);
 		else   xbee.sendRemoteATCmdReq(addrXbee[0], 16, OPT_APPLY_CHANGES, cmdD4, 0x04, true);
 
-		if(digitalRead(10) == 1)   xbee.sendRemoteATCmdReq(addrXbee[1], 16, OPT_APPLY_CHANGES, cmdD4, 0x05, true);
+		if(xbeePinVals[1] == 1)   xbee.sendRemoteATCmdReq(addrXbee[1], 16, OPT_APPLY_CHANGES, cmdD4, 0x05, true);
 		else   xbee.sendRemoteATCmdReq(addrXbee[1], 16, OPT_APPLY_CHANGES, cmdD4, 0x04, true);
 	}
 	delay(50);
