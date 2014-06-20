@@ -19,7 +19,7 @@
 #include "webServerClass.h"
 
 #define numYunIOPins	7			// Total number of digital IO pins used in Arduino Yun
-#define numXbeeModules  2			// Total number of routers or endpoint connected in the mesh
+#define numXbeeModules  3			// Total number of routers or endpoint connected in the mesh
 
 
 //Thingspeak parameters 
@@ -42,7 +42,7 @@ typedef struct
     unsigned int yunTemp;					// Filtered temperature
 	unsigned int accumTemp;			// Accumulated temperature
 
-	float xbeeTempSensor[2];
+	float xbeeTempSensor[numXbeeModules];
 } sensorData;
 sensorData sData;
 
@@ -54,11 +54,11 @@ dht DHT;
 YunServer server;
 
 // WebServerClass instance
-byte yunPinDirs[numYunIOPins] = {1,1,1,1,1,0,0};
-byte yunPinVals[numYunIOPins] = {0,0,0,0,0,0,0};	// pinVals gives the input/output values for pins D6,..., D12
-int  yunAnVals[6]  = {0,0,0,0,0,0};	// anVals stores the analog input values for pins A0,..., A5
-byte xbeePinDirs[numXbeeModules] = {0, 0};
-bool xbeePinVals[numXbeeModules] = {0, 0};
+byte yunPinDirs[numYunIOPins] = {1,1,1,1,1,0,0};	// Set Yun digital pins as inputs or outputs.
+byte yunPinVals[numYunIOPins] = {0,0,0,0,0,0,0};	// Save digital values for pins D6,..., D12.
+int  yunAnVals[6]  = {0,0,0,0,0,0};					// Save analog values for pins A0,..., A5.
+byte xbeePinDirs[numXbeeModules] = {0, 0, 0};
+byte xbeePinVals[numXbeeModules] = {1, 0, 1};
 webServerClass webServerHandler(numYunIOPins, numXbeeModules, 
 								yunPinDirs, yunPinVals, yunAnVals,
 								xbeePinDirs, xbeePinVals);
@@ -67,7 +67,7 @@ webServerClass webServerHandler(numYunIOPins, numXbeeModules,
 AltSoftSerial altSoftSerial;	// Arduino Yun use pin5->Tx and pin13->Rx
 SetXbee xbee;
 unsigned char cmdD4[2] = {'D','4'};	// Remote AT command request for IS and D4
-const uint32_t addrXbee[] = {0x40B82646, 0x40A71859};	// Save lsb address for xbee modules
+const uint32_t addrXbee[numXbeeModules] = {0x40B82646, 0x40A71859, 0x40AF6912};	// Save lsb address for xbee modules
 
 // Function prototype. Function declarations.
 void postToThingspeak();
@@ -171,15 +171,31 @@ void loop()
 	// There is a new client?
 	if (client)
 	{
-		webServerHandler.serverHandle(client); 
-		// Close connection and free resources.
-		client.stop();
-		// Set remote xbee pins if local pins 9 and 10 are set via JS.
-		if(xbeePinVals[0] == 1)   xbee.sendRemoteATCmdReq(addrXbee[0], 16, OPT_APPLY_CHANGES, cmdD4, 0x05, true);
-		else   xbee.sendRemoteATCmdReq(addrXbee[0], 16, OPT_APPLY_CHANGES, cmdD4, 0x04, true);
+		webServerHandler.serverHandle(client);   // Handle Web page JavaScript request
+		client.stop();	// Close connection and free resources.
 
-		if(xbeePinVals[1] == 1)   xbee.sendRemoteATCmdReq(addrXbee[1], 16, OPT_APPLY_CHANGES, cmdD4, 0x05, true);
-		else   xbee.sendRemoteATCmdReq(addrXbee[1], 16, OPT_APPLY_CHANGES, cmdD4, 0x04, true);
+		// Set remote xbees pins based on JSON data received from JavaScript.
+		if(xbeePinVals[0] == 1) {
+			xbee.sendRemoteATCmdReq(addrXbee[0], 16, OPT_APPLY_CHANGES, cmdD4, 0x05, true);
+			// Repeating command seems to improve response speed************************************
+			//xbee.sendRemoteATCmdReq(addrXbee[0], 16, OPT_APPLY_CHANGES, cmdD4, 0x05, true);
+		} else {
+			xbee.sendRemoteATCmdReq(addrXbee[0], 16, OPT_APPLY_CHANGES, cmdD4, 0x04, true);
+			// Repeating command seems to improve response speed************************************
+			//xbee.sendRemoteATCmdReq(addrXbee[0], 16, OPT_APPLY_CHANGES, cmdD4, 0x04, true);
+		}
+
+		if(xbeePinVals[1] == 1) {
+			xbee.sendRemoteATCmdReq(addrXbee[1], 16, OPT_APPLY_CHANGES, cmdD4, 0x05, true);
+		} else {
+			xbee.sendRemoteATCmdReq(addrXbee[1], 16, OPT_APPLY_CHANGES, cmdD4, 0x04, true);
+		}
+
+		if(xbeePinVals[2] == 1) {
+			xbee.sendRemoteATCmdReq(addrXbee[2], 16, OPT_APPLY_CHANGES, cmdD4, 0x05, true);
+		} else {
+			xbee.sendRemoteATCmdReq(addrXbee[2], 16, OPT_APPLY_CHANGES, cmdD4, 0x04, true);
+		}
 	}
 	delay(50);
 }
@@ -208,11 +224,12 @@ void postToThingspeak(){
 	if(bufferIn != "0")
 	{
 		Console.print(bufferIn);
-		Console.println("\tUpdate Completed:");
+		//Console.println("\tUpdate Completed:");
 		Console.print("\tYun Hdty Value: "); Console.println(sData.yunHdty);
 		Console.print("\tYun Temp Value: "); Console.println(sData.yunTemp);
 		Console.print("\tXbee Temp1 Value: "); Console.println(sData.xbeeTempSensor[0]);
 		Console.print("\tXbee Temp2 Value: "); Console.println(sData.xbeeTempSensor[1]);
+		Console.print("\tXbee Temp3 Value: "); Console.println(sData.xbeeTempSensor[2]);
 	}
 	else
 	{
@@ -221,6 +238,7 @@ void postToThingspeak(){
 	}
 }
 
+// Store all sensor data. The function is called each 2 second.
 void retreiveSensorData()
 {
 	// Get xbee sensor information
@@ -229,7 +247,7 @@ void retreiveSensorData()
 	// Only if new data is available and complete will proceed.
 	if(xbee.isRxComplete())
 	{
-		// Modules will sample at 6 second each, so retreiveSensorData() must be enought faster to ahndle it.
+		// Modules will sample at 6 second each, so retreiveSensorData() must be enought faster to handle it.
 		if(xbee.getRxLsbAddr64() == addrXbee[0])
 		{
 			sData.xbeeTempSensor[0] = calculateXBeeTemp(xbee.getADC3());
@@ -243,6 +261,10 @@ void retreiveSensorData()
 			//xbee.sendRemoteATCmdReq(addrXbee[1], 16, OPT_APPLY_CHANGES, cmdD4, 0x05, true);
 			//xbee.sendRemoteATCmdReq(addrXbee[1], 16, OPT_APPLY_CHANGES, cmdD4, 0x04, true);
 			//Console.println(sData.xbeeTempSensor[1]);
+		}
+		else if(xbee.getRxLsbAddr64() == addrXbee[2])
+		{
+			sData.xbeeTempSensor[2] = calculateXBeeTemp(xbee.getADC3());
 		}
 	}
 

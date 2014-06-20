@@ -12,7 +12,7 @@ class webServerClass
 public:
 	webServerClass(byte numYunIOPins, byte numXbeeModules,
 				   byte *YunPinDirs, byte *YunPinVals, int *YunAnVals,
-				   byte *XbeePinDirs, bool *XbeePinVals);
+				   byte *XbeePinDirs, byte *XbeePinVals);
 	void serverHandle(YunClient client);
 	void setYunPinDirs();
 	void setYunPinVals();
@@ -32,8 +32,7 @@ private:
 	int* _ptrYunAnVals;		// Pointer to yunAnVals array.
 
 	byte* _ptrXbeePinDirs;	// Direction mask array for each IO of Xbee modules.
-	bool* _ptrXbeePinVals;	// Value mask array for each IO of Xbee modules.
-
+	byte* _ptrXbeePinVals;	// Value mask array for each IO of Xbee modules.
 
 };
 

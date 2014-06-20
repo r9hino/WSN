@@ -9,7 +9,7 @@
 // PUBLIC
 webServerClass::webServerClass(byte numYunIOPins, byte numXbeeModules, 
 							   byte *yunPinDirs, byte *yunPinVals, int *yunAnVals,
-							   byte *xbeePinDirs, bool *xbeePinVals)
+							   byte *xbeePinDirs, byte *xbeePinVals)
 {
 	_numYunIOPins = numYunIOPins;
 	_numXbeeModules = numXbeeModules;
@@ -64,7 +64,7 @@ void webServerClass::serverHandle(YunClient client)
 
 	// This sets the direction of data for the digital pins. 
 	// See definition of pinDirs[] above returns a JSON "OK" object when finished
-	if(command == "io")
+	if(command == "dirIO")
 	{
 		command = client.readStringUntil('/');
 		command.trim();
@@ -85,8 +85,8 @@ void webServerClass::serverHandle(YunClient client)
 		setYunPinDirs();
 	}
 
-	// This sets values for the digital output pins, and returns a JSON "OK" object when finished
-	if (command == "do")
+	// Sets digital output pin values, and returns a JSON "OK" object when finished
+	if (command == "setDO")
 	{
 		// Save Yun output values.
 		command = client.readStringUntil('/');
@@ -106,19 +106,19 @@ void webServerClass::serverHandle(YunClient client)
 			else	*(_ptrXbeePinVals+i) = 255;
 		}
 
-		// Set JSON header
+		// Set JSON header.
 		client.println("Status: 200");
 		client.println("Content-type: application/json");
 		client.println();
 		// Return ok status
 		client.print("{\"ret\":\"ok\"}");
 
-		// Update data values
+		// Update data values.
 		setYunPinVals();
 	}    
 
-	// Reads the digital IO and analog pins and returns the values as a JSON object
-	if (command == "readIO")
+	// Reads the digital IO and analog pins and returns the values to JS as a JSON object
+	if (command == "readDIO")
 	{
 		// Update data values
 		setYunPinVals();

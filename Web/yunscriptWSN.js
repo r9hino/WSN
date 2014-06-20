@@ -69,7 +69,7 @@ $(document).ready(function(e){
         $('#loadingall').html('...Loading');
         $('#loadingall').show();
         //$.getJSON("V_io_test.json",function(data){    // swap this for line below to test locally
-        $.getJSON("/arduino/readIO/",function(data)	  // send the in command to the Yun
+        $.getJSON("/arduino/readDIO/",function(data)	  // send the in command to the Yun
 		{
 			console.log(data);
 			var j = 6;
@@ -91,7 +91,7 @@ $(document).ready(function(e){
     // current data directions and update the radio selections 
     $('#callinitp2').click(function() {initpage2();});
 
-    // Send new data direction to Yun, string sent to arduino is of the form: /arduino/io/012012012012/
+    // Send new data direction to Yun, string sent to arduino is of the form: /arduino/dirIO/012012012012/
     //  0: pin is output
     //  1: pin is input
     //  2: pin is input with pull-up
@@ -113,7 +113,7 @@ $(document).ready(function(e){
 
     // Construct the save-state string to send
     function doSaveStateDir(){  
-        var RVal="/io/";
+        var RVal="/dirIO/";
         for (var j=6; j<=12; j++)
         {
             RVal+=getRadioStateDDir('#radio-choice-d'+j);
@@ -150,10 +150,12 @@ $(document).ready(function(e){
 
         //$.getJSON("V_io_test.json",function(data){    // swap this for line below to test locally
         // Reads the digital and analog pins and returns the values as a JSON object            
-        $.getJSON("/arduino/readIO/",function(data)
+        $.getJSON("/arduino/readDIO/",function(data)
 		{
 			console.log( data );
 			$('#setdigital_vals').empty();  // empty the div
+
+            // Read Yun state and create radio inputs.
 			var j = 6;
 			$.each(data.DigitalYun, function (key,value)    // 0/1 digital pin is output with value 0/1     10/11 digital pin is input with value 0/1
 			{
@@ -183,7 +185,8 @@ $(document).ready(function(e){
 					}
 					j++;
 			});
-
+            
+            // Read Xbee state and create radio inputs.
             var j = 1;
             $.each(data.DigitalXbee, function (key,value)    // 0/1 digital pin is output with value 0/1     10/11 digital pin is input with value 0/1
             {
@@ -219,7 +222,7 @@ $(document).ready(function(e){
         // going through radio objects here won't work as the getJSON is async and items won't be defined.
     }
 
-    // Send new data values to Yun. String sent to arduino is: /arduino/do/1010101/10
+    // Send new data values to Yun. String sent to arduino is: /arduino/setDO/1010101/10
     //  0: set pin LOW if output
     //  1: set pin HIGH if output
     $('#update_io').click(function() 
@@ -242,7 +245,7 @@ $(document).ready(function(e){
     // Construct the save-state string to send
     function doSaveStateOut()
 	{
-        var RVal = "/do/";
+        var RVal = "/setDO/";
 
         // Yun pins output
         for (var j=6; j<=12; j++)
@@ -259,7 +262,7 @@ $(document).ready(function(e){
         RVal += "/";
 
         // Xbee pins output
-        for (var j=1; j<=2; j++)
+        for (var j=1; j<=3; j++)
         {
             if ($('#radio-val-xbee-d'+j+'1').length > 0)
             {
@@ -272,7 +275,7 @@ $(document).ready(function(e){
         }   
         RVal += "/";
 
-        // /do/0000011/01
+        // /setDO/0000011/010
         return RVal;
     }
 
