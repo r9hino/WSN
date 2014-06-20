@@ -157,9 +157,10 @@ $(document).ready(function(e){
 
             // Read Yun state and create radio inputs.
 			var j = 6;
+            var labelStr = ["D6", "D7", "D8", "D9", "D10", "Calentador Pipo", "Lampara Pipo"];
 			$.each(data.DigitalYun, function (key,value)    // 0/1 digital pin is output with value 0/1     10/11 digital pin is input with value 0/1
 			{
-					var labelStr = "D"+j.toString();
+					//var labelStr = "D"+j.toString();
 
 					// Only to ouputs we assign radio (button). Input which are 10 or 11 do not enter here...
 					if (value.dataval === 0 || value.dataval === 1) 
@@ -167,7 +168,7 @@ $(document).ready(function(e){
 						$('#setdigital_vals').append(
 							'<div id="radiogroup'+j+'" data-role="fieldcontain">\
 								<fieldset data-role="controlgroup" data-type="horizontal" data-mini="true">\
-									<legend>'+labelStr+'</legend>\
+									<legend>'+labelStr[j-6]+'</legend>\
 									<input type="radio" name="radio-val-d'+j+'" id="radio-val-d'+j+'1" value="val-'+j+'1" checked="checked"/>\
 										<label for="radio-val-d'+j+'1">On</label>\
 									<input type="radio" name="radio-val-d'+j+'" id="radio-val-d'+j+'2" value="val-'+j+'2"/>\
@@ -188,9 +189,10 @@ $(document).ready(function(e){
             
             // Read Xbee state and create radio inputs.
             var j = 1;
+            var labelStr = ["Musica", "Lampara 2", "Calentador Mama"];
             $.each(data.DigitalXbee, function (key,value)    // 0/1 digital pin is output with value 0/1     10/11 digital pin is input with value 0/1
             {
-                    var labelStr = "Xbee"+j.toString();
+                    //var labelStr = "Xbee"+j.toString();
 
                     // Only to ouputs we assign radio (button). Input which are 10 or 11 do not enter here...
                     if (value.dataval === 0 || value.dataval === 1) 
@@ -198,7 +200,7 @@ $(document).ready(function(e){
                         $('#setdigital_vals').append(
                             '<div id="radiogroup'+j+'" data-role="fieldcontain">\
                                 <fieldset data-role="controlgroup" data-type="horizontal" data-mini="true">\
-                                    <legend>'+labelStr+'</legend>\
+                                    <legend>'+labelStr[j-1]+'</legend>\
                                     <input type="radio" name="radio-val-xbee-d'+j+'" id="radio-val-xbee-d'+j+'1" value="val-'+j+'1" checked="checked"/>\
                                         <label for="radio-val-xbee-d'+j+'1">On</label>\
                                     <input type="radio" name="radio-val-xbee-d'+j+'" id="radio-val-xbee-d'+j+'2" value="val-'+j+'2"/>\
